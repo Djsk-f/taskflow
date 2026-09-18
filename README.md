@@ -141,7 +141,14 @@ une fois la base prête, puis l'interface une fois l'API prête :
 docker compose ps        # mysql et api « healthy », web « Up »
 ```
 
-Ouvrir **http://localhost:3000**, puis **créer un compte** : la base démarre vide.
+Ouvrir **http://localhost:3000** et se connecter avec le **compte de démonstration**,
+créé automatiquement au premier démarrage (35 tâches, deux semaines de feuilles de temps) :
+
+| Email | Mot de passe |
+|-------|--------------|
+| `camille.martin@taskflow.dev` | `Demo2026!` |
+
+On peut aussi créer son propre compte. Pour démarrer sur une base vide : `APP_DEMO_DATA=false` dans `.env`.
 
 L'interface est servie par nginx, qui relaie aussi les appels `/api` vers l'API : pour le
 navigateur, tout vient de la même origine. L'API reste joignable directement sur
@@ -199,7 +206,8 @@ npm ci
 npm run dev
 ```
 
-Ouvrir **http://localhost:5173**, puis **créer un compte** : la base démarre vide.
+Ouvrir **http://localhost:5173** et se connecter avec le compte de démonstration
+(`camille.martin@taskflow.dev` / `Demo2026!`) ou créer un compte.
 
 > L'interface doit tourner sur le port 5173, seule origine autorisée par défaut
 > (`APP_CORS_ALLOWED_ORIGINS`). Si Vite annonce un autre port, libérer le 5173.
@@ -232,6 +240,8 @@ par son nom de service (`mysql:3306`), quel que soit `DB_PORT`.
 | `JWT_SECRET` | *à générer* | API | Clé de signature HMAC, base64, 48 octets minimum |
 | `JWT_EXPIRATION_MS` | `86400000` | API | Durée de validité du jeton (24 h) |
 | `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API | Origines autorisées, séparées par des virgules |
+| `APP_DEMO_DATA` | `true` | API | Crée le compte de démonstration au démarrage s'il n'existe pas |
+| `APP_DEMO_PASSWORD` | `Demo2026!` (défaut) | API | Mot de passe du compte de démonstration |
 | `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Interface (option B) | URL de base de l'API ; l'image Docker utilise `/api/v1`, relayé par nginx |
 | `WEB_PORT` | `3000` | Docker | Port de l'application en option A |
 
@@ -322,6 +332,7 @@ Chaque tâche expose aussi `timeSpentMinutes`, son temps total saisi.
 | `RESOURCE_NOT_FOUND` | 404 | Ressource inexistante **ou appartenant à un autre utilisateur** |
 | `METHOD_NOT_ALLOWED` | 405 | Verbe HTTP non supporté |
 | `EMAIL_ALREADY_USED` | 409 | Email déjà associé à un compte |
+| `TOO_MANY_REQUESTS` | 429 | 5 connexions échouées pour un même email : bloqué 15 min (en-tête `Retry-After`) |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Corps non JSON |
 | `INTERNAL_ERROR` | 500 | Erreur inattendue — message neutre, aucune trace technique exposée |
 
@@ -430,7 +441,14 @@ de jetons de couleur.
   et par des appels croisés entre deux comptes.
 - **Mots de passe** hachés avec BCrypt ; jamais renvoyés par l'API, même hachés.
 - **JWT** signé en HMAC-SHA-384, clé de 48 octets minimum ; l'API refuse de démarrer sans secret valide.
-- **Tout est fermé par défaut** : seules l'inscription, la connexion et `/actuator/health` sont publiques.
+- **Tout est fermé par défaut** : seules l'inscription, la connexion, `/actuator/health` et la
+  documentation de l'API sont publiques.
+- **Protection contre la force brute** : après 5 échecs de connexion pour un même email, les
+  tentatives sont refusées 15 minutes (`429`), même avec le bon mot de passe ; un succès
+  remet le compteur à zéro.
+- **En-têtes de sécurité** servis par nginx : politique de sécurité du contenu stricte (aucun
+  script en ligne), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy`, `Permissions-Policy` ; version du serveur masquée.
 - **CORS** restreint aux origines configurées.
 - **Aucune fuite technique** : ni trace d'exécution ni message d'exception interne dans les réponses.
 - **Aucun secret dans le dépôt** : `.env` est ignoré par Git, seul `.env.example` est versionné.
@@ -439,7 +457,7 @@ de jetons de couleur.
 
 ## Tests et qualité
 
-**API** — 42 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+**API** — 47 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
 
 ```bash
 cd task-manager-api-v1
@@ -455,6 +473,9 @@ cd task-manager-api-v1
 | `JwtServiceTest` | 8 | Jeton relu correctement ; jeton altéré, signé par une autre clé, expiré ou illisible refusé ; secret absent ou trop court refusé ; durée conforme |
 | `TaskServiceTest` | 4 | Tâche rattachée à l'utilisateur authentifié ; tâche d'autrui introuvable en lecture et en suppression, modification sans aucune écriture |
 | `AuthServiceTest` | 3 | Email en double refusé, email normalisé et mot de passe haché, message générique sur identifiants invalides |
+| `LoginAttemptGuardTest` | 3 | Blocage au 6e essai avec délai restant, déblocage à la fin de la fenêtre, remise à zéro après un succès |
+| `LoginRateLimitApiTest` | 1 | Bout en bout : 5 mots de passe faux puis le bon → `429` et `Retry-After` ; un autre compte n'est pas touché |
+| `DemoDataLoaderTest` | 1 | Compte de démonstration complet, mot de passe haché, aucun doublon au second passage |
 | `OpenApiDocumentationTest` | 3 | Documentation publique et complète, connexion publique, routes protégées avec 401/404 documentés, aucun paramètre `userId` exposé ; Swagger UI accessible |
 | `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
@@ -502,7 +523,10 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
 - **Pas de refresh token** : la session expire au bout de 24 h, il faut se reconnecter.
 - **Pas de tests automatisés côté interface** : vérifications faites dans le navigateur.
   Piste : Vitest + Testing Library, puis Playwright pour les parcours.
-- **Bundle JavaScript en un seul fichier** (~850 kB, ~265 kB gzip). Piste : découpage par route.
+- **Poids du JavaScript** : chaque page est chargée à la demande, mais le socle commun
+  (React, bibliothèques, dictionnaires) pèse encore ~565 kB (~178 kB compressé).
+- **Limitation des connexions en mémoire** : valable pour une seule instance de l'API (pas de
+  partage entre instances) ; un tiers connaissant un email peut le bloquer 15 minutes.
 - **Feuilles de temps volontairement simples** : pas de minuteur, pas de validation par un
   responsable, export limité à la semaine affichée ; le sélecteur d'ajout de ligne propose
   les 50 premières tâches par ordre alphabétique.
