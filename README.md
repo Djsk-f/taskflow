@@ -1,5 +1,7 @@
 # TaskFlow
 
+[![CI](https://github.com/Djsk-f/taskflow/actions/workflows/ci.yml/badge.svg)](https://github.com/Djsk-f/taskflow/actions/workflows/ci.yml)
+
 Application web de gestion de tâches personnelles : chaque utilisateur crée un compte,
 se connecte, puis gère **ses** tâches — tableau Kanban, recherche, filtres, pagination —
 et **le temps qu'il y passe** grâce aux feuilles de temps. Interface responsive,
@@ -437,6 +439,10 @@ cd task-manager-api-v1
 | `AuthServiceTest` | 3 | Email en double refusé, email normalisé et mot de passe haché, message générique sur identifiants invalides |
 | `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
+**Intégration continue** : à chaque push et pull request, GitHub Actions lance les tests
+de l'API, le lint et le build de l'interface, puis construit les deux images Docker
+(`.github/workflows/ci.yml`).
+
 **Interface** :
 
 ```bash
@@ -489,7 +495,7 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
   minute, sans notification push ni e-mail.
 - **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
   l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`.
-- **Non réalisés (bonus)** : intégration continue, déploiement public, documentation Swagger.
+- **Non réalisés (bonus)** : déploiement public, documentation Swagger.
 - **Éléments de la maquette volontairement non repris** : avatars d'équipe, intégrations
   (Slack, GitHub, Gmail…), messagerie et images de couverture des cartes. TaskFlow est
   mono-utilisateur ; les reproduire aurait donné des contrôles décoratifs sans fonction.
