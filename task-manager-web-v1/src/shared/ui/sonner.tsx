@@ -18,7 +18,7 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner'
 const Toaster = (props: ToasterProps) => (
   <ThemedSonner
     className="toaster group"
-    position="top-right"
+    position="bottom-right"
     icons={{
       success: <CircleCheckIcon className="size-4" />,
       info: <InfoIcon className="size-4" />,

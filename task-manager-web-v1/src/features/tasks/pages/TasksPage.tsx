@@ -36,6 +36,14 @@ export function TasksPage() {
   const [searchDraft, setSearchDraft] = useState(filters.search)
   const debouncedSearch = useDebouncedValue(searchDraft, 300)
 
+  // L'URL peut changer sans passer par le champ (cloche, retour arrière) : le champ suit.
+  // Ajustement pendant le rendu plutôt qu'un effet, comme le recommande React.
+  const [syncedSearch, setSyncedSearch] = useState(filters.search)
+  if (filters.search !== syncedSearch) {
+    setSyncedSearch(filters.search)
+    setSearchDraft(filters.search)
+  }
+
   const [formOpen, setFormOpen] = useState(false)
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined)
   const [createStatus, setCreateStatus] = useState<TaskStatus>('TODO')

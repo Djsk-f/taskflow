@@ -1,4 +1,5 @@
 import { useAuth } from '@/features/auth/useAuth'
+import { NotificationBell } from '@/features/tasks/components/NotificationBell'
 import { Button } from '@/shared/ui/button'
 import {
   DropdownMenu,
@@ -39,6 +40,8 @@ export function Topbar({ title, action, onOpenMenu }: TopbarProps) {
       <h1 className="flex-1 truncate text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
 
       {action}
+
+      <NotificationBell />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

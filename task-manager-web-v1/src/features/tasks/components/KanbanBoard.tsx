@@ -65,7 +65,11 @@ export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowIn
     )
   }
 
-  const loaded = columns.flatMap((column) => column.query.data?.content ?? [])
+  // Pendant un déplacement, la tâche peut figurer à la fois dans la liste d'origine (pas
+  // encore rechargée) et dans celle d'arrivée : on ne garde qu'un exemplaire par identifiant.
+  const loaded = [
+    ...new Map(columns.flatMap((column) => column.query.data?.content ?? []).map((task) => [task.id, task])).values(),
+  ]
   const statusOf = (task: Task) => pendingMoves[task.id] ?? task.status
 
   const handleDragStart = ({ active }: DragStartEvent) => {
