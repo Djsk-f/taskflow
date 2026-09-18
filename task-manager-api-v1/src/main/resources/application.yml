@@ -1,6 +1,13 @@
 spring:
   application:
     name: task-manager-api-v1
+  # Le .env racine est lu directement : `./mvnw spring-boot:run` suffit, sans `source`,
+  # sur Linux, macOS comme Windows. Lancé depuis le module ou depuis la racine.
+  # Une vraie variable d'environnement reste prioritaire (déploiement, CI).
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
   datasource:
     # URL composée à partir des MÊMES variables que docker-compose : changer DB_PORT suffit.
     # Volontairement pas de variable SPRING_DATASOURCE_URL : Spring l'appliquerait d'office,
