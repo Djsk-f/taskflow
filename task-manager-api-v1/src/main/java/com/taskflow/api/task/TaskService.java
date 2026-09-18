@@ -5,6 +5,7 @@ import com.taskflow.api.common.exception.ResourceNotFoundException;
 import com.taskflow.api.task.dto.TaskFilter;
 import com.taskflow.api.task.dto.TaskRequest;
 import com.taskflow.api.task.dto.TaskResponse;
+import com.taskflow.api.task.dto.TaskStatusRequest;
 import com.taskflow.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,14 @@ public class TaskService {
         TaskMapper.applyTo(request, task);
         // saveAndFlush et non save : l'horodatage d'audit est écrit par Hibernate au flush.
         // Sans flush explicite, la réponse renverrait l'updatedAt d'avant la modification.
+        return TaskMapper.toResponse(taskRepository.saveAndFlush(task));
+    }
+
+    /** Changement de statut seul (glisser-déposer du Kanban) : les autres champs sont intacts. */
+    @Transactional
+    public TaskResponse updateStatus(Long taskId, Long userId, TaskStatusRequest request) {
+        Task task = requireOwnedTask(taskId, userId);
+        task.setStatus(request.status());
         return TaskMapper.toResponse(taskRepository.saveAndFlush(task));
     }
 

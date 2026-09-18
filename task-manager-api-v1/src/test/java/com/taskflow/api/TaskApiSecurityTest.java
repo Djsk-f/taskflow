@@ -2,6 +2,7 @@ package com.taskflow.api;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -80,6 +81,45 @@ class TaskApiSecurityTest {
                 .content("{\"title\":\"x\"}")).andExpect(status().isUnauthorized());
         mockMvc.perform(delete("/api/v1/tasks/" + aliceTaskId)).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/users/me")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/api/v1/tasks/" + aliceTaskId + "/status").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"DONE\"}")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/tasks/stats")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/tasks/due")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("changement de statut : 404 pour Bob sans effet, 200 pour Alice, statistiques à jour")
+    void statusChangeIsOwnerOnly() throws Exception {
+        String bearerAlice = "Bearer " + tokenAlice;
+        String before = JsonPath.read(mockMvc.perform(get("/api/v1/tasks/" + aliceTaskId)
+                .header(HttpHeaders.AUTHORIZATION, bearerAlice)).andReturn().getResponse().getContentAsString(), "$.status");
+        String target = "DONE".equals(before) ? "IN_REVIEW" : "DONE";
+
+        mockMvc.perform(patch("/api/v1/tasks/" + aliceTaskId + "/status").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenBob)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"%s\"}".formatted(target)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+        mockMvc.perform(get("/api/v1/tasks/" + aliceTaskId).header(HttpHeaders.AUTHORIZATION, bearerAlice))
+                .andExpect(jsonPath("$.status").value(before));
+
+        mockMvc.perform(patch("/api/v1/tasks/" + aliceTaskId + "/status").header(HttpHeaders.AUTHORIZATION, bearerAlice)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("status"));
+
+        mockMvc.perform(patch("/api/v1/tasks/" + aliceTaskId + "/status").header(HttpHeaders.AUTHORIZATION, bearerAlice)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"%s\"}".formatted(target)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(target))
+                .andExpect(jsonPath("$.title").value("Tâche d'Alice"));
+
+        mockMvc.perform(get("/api/v1/tasks/stats").header(HttpHeaders.AUTHORIZATION, bearerAlice))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.byStatus." + target).value(1))
+                .andExpect(jsonPath("$.byStatus.TODO").value(0));
+        mockMvc.perform(get("/api/v1/tasks/stats").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenBob))
+                .andExpect(jsonPath("$.total").value(0));
     }
 
     @Test

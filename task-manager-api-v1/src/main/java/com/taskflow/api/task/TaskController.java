@@ -5,11 +5,15 @@ import com.taskflow.api.security.CurrentUser;
 import com.taskflow.api.task.dto.TaskFilter;
 import com.taskflow.api.task.dto.TaskRequest;
 import com.taskflow.api.task.dto.TaskResponse;
+import com.taskflow.api.task.dto.TaskStatsResponse;
+import com.taskflow.api.task.dto.TaskStatusRequest;
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TaskController {
 
     private final TaskService taskService;
+    private final TaskInsightService taskInsightService;
 
     @GetMapping
     public PageResponse<TaskResponse> search(
@@ -37,6 +42,17 @@ public class TaskController {
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
         return taskService.search(userId, new TaskFilter(search, status, priority),
                 TaskPageRequests.of(page, size, sort));
+    }
+
+    @GetMapping("/stats")
+    public TaskStatsResponse stats(@CurrentUser Long userId) {
+        return taskInsightService.stats(userId);
+    }
+
+    @GetMapping("/due")
+    public List<TaskResponse> due(@CurrentUser Long userId,
+                                  @RequestParam(defaultValue = "24") int withinHours) {
+        return taskInsightService.due(userId, withinHours);
     }
 
     @GetMapping("/{taskId}")
@@ -54,6 +70,12 @@ public class TaskController {
     public TaskResponse update(@CurrentUser Long userId, @PathVariable Long taskId,
                                @Valid @RequestBody TaskRequest request) {
         return taskService.update(taskId, userId, request);
+    }
+
+    @PatchMapping("/{taskId}/status")
+    public TaskResponse updateStatus(@CurrentUser Long userId, @PathVariable Long taskId,
+                                     @Valid @RequestBody TaskStatusRequest request) {
+        return taskService.updateStatus(taskId, userId, request);
     }
 
     @DeleteMapping("/{taskId}")

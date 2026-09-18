@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.taskflow.api.task.dto.TaskFilter;
 import com.taskflow.api.user.User;
 import com.taskflow.api.user.UserRepository;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -90,6 +92,37 @@ class TaskRepositoryIsolationTest {
                 PageRequest.of(0, 10));
 
         assertThat(page.getTotalElements()).isZero();
+    }
+
+    @Test
+    @DisplayName("les agrégats du tableau de bord ne comptent que les tâches du propriétaire")
+    void aggregatesAreScopedToOwner() {
+        assertThat(taskRepository.countByStatus(alice.getId()))
+                .extracting(TaskRepository.StatusCount::getStatus, TaskRepository.StatusCount::getTotal)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(TaskStatus.TODO, 1L));
+        assertThat(taskRepository.countByPriorityExcludingStatus(bob.getId(), TaskStatus.DONE))
+                .as("la seule tâche de Bob est terminée : aucune tâche ouverte")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("retards et échéances : scopés au propriétaire, tâches terminées exclues")
+    void dueTasksAreScopedToOwnerAndExcludeDone() {
+        Instant now = Instant.now();
+        Instant yesterday = now.minus(Duration.ofDays(1));
+        taskRepository.save(Task.builder().user(bob).title("Retard de Bob")
+                .status(TaskStatus.IN_PROGRESS).priority(TaskPriority.HIGH).dueDate(yesterday).build());
+        taskRepository.save(Task.builder().user(alice).title("Retard terminé d'Alice")
+                .status(TaskStatus.DONE).priority(TaskPriority.HIGH).dueDate(yesterday).build());
+
+        assertThat(taskRepository.countByUserIdAndStatusNotAndDueDateBefore(alice.getId(), TaskStatus.DONE, now))
+                .as("le retard de Bob ne compte pas pour Alice, sa tâche terminée non plus")
+                .isZero();
+        assertThat(taskRepository.findTop20ByUserIdAndStatusNotAndDueDateLessThanEqualOrderByDueDateAsc(
+                alice.getId(), TaskStatus.DONE, now)).isEmpty();
+        assertThat(taskRepository.findTop20ByUserIdAndStatusNotAndDueDateLessThanEqualOrderByDueDateAsc(
+                bob.getId(), TaskStatus.DONE, now))
+                .extracting(Task::getTitle).containsExactly("Retard de Bob");
     }
 
     @Test
