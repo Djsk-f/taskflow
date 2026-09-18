@@ -31,12 +31,12 @@ export function Topbar({ title, action, onOpenMenu }: TopbarProps) {
     .join('')
 
   return (
-    <header className="flex items-center gap-3 px-4 py-4 sm:px-8">
+    <header className="flex items-center gap-3 px-4 py-5 sm:px-8">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMenu} aria-label="Ouvrir le menu">
         <MenuIcon className="size-5" />
       </Button>
 
-      <h1 className="flex-1 truncate text-xl font-bold sm:text-2xl">{title}</h1>
+      <h1 className="flex-1 truncate text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
 
       {action}
 

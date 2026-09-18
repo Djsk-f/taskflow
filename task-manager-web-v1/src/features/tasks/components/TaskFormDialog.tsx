@@ -1,7 +1,7 @@
 import { useTaskMutations } from '@/features/tasks/hooks/useTaskMutations'
 import { taskFormSchema, toTaskPayload, type TaskFormValues } from '@/features/tasks/schemas'
 import { priorityOptions, statusOptions } from '@/features/tasks/taskMeta'
-import type { Task } from '@/features/tasks/types'
+import type { Task, TaskStatus } from '@/features/tasks/types'
 import { FormAlert } from '@/shared/components/feedback/FormAlert'
 import { applyApiErrorToForm } from '@/shared/components/form/applyApiErrorToForm'
 import { FormSelectField } from '@/shared/components/form/FormSelectField'
@@ -34,13 +34,15 @@ type TaskFormDialogProps = {
   onOpenChange: (open: boolean) => void
   /** Tâche à modifier ; absente, le formulaire est en création. */
   task?: Task
+  /** Statut proposé en création (bouton « + » d'une colonne Kanban). */
+  defaultStatus?: TaskStatus
 }
 
 /**
  * Création ET modification dans un seul composant (EX-04, EX-05) : deux modales séparées
  * seraient la duplication la plus coûteuse de cet écran (INV-21).
  */
-export function TaskFormDialog({ open, onOpenChange, task }: TaskFormDialogProps) {
+export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO' }: TaskFormDialogProps) {
   const { createTask, updateTask } = useTaskMutations()
   const [alert, setAlert] = useState<string | null>(null)
   const isEditing = task !== undefined
@@ -65,9 +67,9 @@ export function TaskFormDialog({ open, onOpenChange, task }: TaskFormDialogProps
             priority: task.priority,
             dueDate: toDateTimeLocalValue(task.dueDate),
           }
-        : EMPTY_VALUES,
+        : { ...EMPTY_VALUES, status: defaultStatus },
     )
-  }, [open, task, form])
+  }, [open, task, defaultStatus, form])
 
   // L'alerte est vidée à la fermeture : la modale se ferme toujours avant de se rouvrir.
   const handleOpenChange = (nextOpen: boolean) => {

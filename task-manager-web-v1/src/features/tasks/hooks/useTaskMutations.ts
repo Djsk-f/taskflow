@@ -1,6 +1,6 @@
 import { taskApi } from '@/features/tasks/api/taskApi'
 import { TASKS_QUERY_KEY } from '@/features/tasks/hooks/useTasks'
-import type { TaskPayload } from '@/features/tasks/types'
+import type { TaskPayload, TaskStatus } from '@/features/tasks/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
@@ -30,6 +30,13 @@ export function useTaskMutations() {
     },
   })
 
+  // L'invalidation est renvoyée : `mutateAsync` n'aboutit qu'une fois les listes
+  // rechargées, ce qui permet au Kanban de retirer sa mise à jour optimiste sans à-coup.
+  const updateStatus = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: TaskStatus }) => taskApi.updateStatus(id, status),
+    onSuccess: () => invalidateTasks(),
+  })
+
   const deleteTask = useMutation({
     mutationFn: (id: number) => taskApi.remove(id),
     onSuccess: () => {
@@ -38,5 +45,5 @@ export function useTaskMutations() {
     },
   })
 
-  return { createTask, updateTask, deleteTask }
+  return { createTask, updateTask, updateStatus, deleteTask }
 }

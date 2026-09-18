@@ -1,6 +1,15 @@
-import { TASK_PRIORITIES, TASK_STATUSES, type TaskFilters, type TaskPriority, type TaskStatus } from '@/features/tasks/types'
+import {
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  TASK_VIEWS,
+  type TaskFilters,
+  type TaskPriority,
+  type TaskStatus,
+  type TaskView,
+} from '@/features/tasks/types'
 
 export const DEFAULT_PAGE_SIZE = 10
+export const DEFAULT_VIEW: TaskView = 'kanban'
 
 /**
  * Les filtres vivent dans l'URL : un lien reste partageable, le retour arrière fonctionne,
@@ -34,11 +43,26 @@ export function writeTaskFilters(filters: TaskFilters): URLSearchParams {
   return params
 }
 
+/** La vue (Kanban par défaut) vit dans l'URL comme les filtres : `?view=table`. */
+export function readTaskView(params: URLSearchParams): TaskView {
+  return parseEnum(params.get('view'), TASK_VIEWS) ?? DEFAULT_VIEW
+}
+
+export function withTaskView(params: URLSearchParams, view: TaskView): URLSearchParams {
+  const next = new URLSearchParams(params)
+  if (view === DEFAULT_VIEW) {
+    next.delete('view')
+  } else {
+    next.set('view', view)
+  }
+  return next
+}
+
 export function hasActiveFilters(filters: TaskFilters): boolean {
   return filters.search !== '' || filters.status !== null || filters.priority !== null
 }
 
 /** Une valeur d'URL inconnue est ignorée plutôt que transmise au serveur. */
-function parseEnum<T extends TaskStatus | TaskPriority>(value: string | null, allowed: readonly T[]): T | null {
+function parseEnum<T extends TaskStatus | TaskPriority | TaskView>(value: string | null, allowed: readonly T[]): T | null {
   return value !== null && (allowed as readonly string[]).includes(value) ? (value as T) : null
 }

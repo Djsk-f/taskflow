@@ -8,6 +8,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 
+const shortDateFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' })
+const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' })
+
 /**
  * Formatage et conversion des dates, sans dépendance : `Intl` fait le travail (INV-24).
  * Le serveur échange des instants ISO-8601 en UTC ; l'affichage et les champs de
@@ -19,6 +22,12 @@ export function formatDateTime(isoDate: string): string {
 
 export function formatDate(isoDate: string): string {
   return dateFormatter.format(new Date(isoDate))
+}
+
+/** Format compact des cartes Kanban, comme la capture : « 24/09 · 18:00 ». */
+export function formatShortDateTime(isoDate: string): string {
+  const date = new Date(isoDate)
+  return `${shortDateFormatter.format(date)} · ${timeFormatter.format(date)}`
 }
 
 /** ISO → valeur d'un `<input type="datetime-local">` (heure locale, sans fuseau). */

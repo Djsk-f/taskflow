@@ -5,19 +5,23 @@ import { useState, type ReactNode } from 'react'
 
 type AppShellProps = {
   title: string
+  /** Action primaire de l'en-tête (ex. « Créer une tâche »). */
   action?: ReactNode
+  /** Barre sous le titre, dans la zone blanche : onglets de vue, filtres. */
+  toolbar?: ReactNode
   children: ReactNode
 }
 
 /**
- * Coquille de l'application : sidebar fixe à partir de 1024 px, tiroir en dessous (EX-13).
+ * Coquille de la capture : sidebar blanche fixe à partir de 1024 px (tiroir en dessous),
+ * en-tête blanc bordé (titre, action, barre d'outils), contenu sur fond gris clair (EX-13).
  */
-export function AppShell({ title, action, children }: AppShellProps) {
+export function AppShell({ title, action, toolbar, children }: AppShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen">
-      <aside className="bg-card hidden w-60 shrink-0 border-r lg:block">
+      <aside className="bg-card sticky top-0 hidden h-screen w-60 shrink-0 border-r lg:block">
         <SidebarContent />
       </aside>
 
@@ -29,8 +33,11 @@ export function AppShell({ title, action, children }: AppShellProps) {
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar title={title} action={action} onOpenMenu={() => setMenuOpen(true)} />
-        <main className="flex-1 px-4 pb-8 sm:px-8">{children}</main>
+        <div className="bg-card border-b">
+          <Topbar title={title} action={action} onOpenMenu={() => setMenuOpen(true)} />
+          {toolbar && <div className="px-4 pb-3 sm:px-8">{toolbar}</div>}
+        </div>
+        <main className="flex-1 px-4 py-6 sm:px-8">{children}</main>
       </div>
     </div>
   )

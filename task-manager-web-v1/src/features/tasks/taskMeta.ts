@@ -25,6 +25,8 @@ export type TaskMeta = {
   label: string
   badgeClassName: string
   dotClassName: string
+  /** Couleur du titre de colonne Kanban (statuts) — texte seul. */
+  textClassName: string
   icon: LucideIcon
 }
 
@@ -33,24 +35,28 @@ export const TASK_STATUS_META = {
     label: 'À faire',
     badgeClassName: 'bg-status-todo/10 text-status-todo',
     dotClassName: 'bg-status-todo',
+    textClassName: 'text-foreground',
     icon: CircleDashedIcon,
   },
   IN_PROGRESS: {
     label: 'En cours',
     badgeClassName: 'bg-status-progress/10 text-status-progress',
     dotClassName: 'bg-status-progress',
+    textClassName: 'text-status-progress',
     icon: TimerIcon,
   },
   IN_REVIEW: {
     label: 'En revue',
     badgeClassName: 'bg-status-review/10 text-status-review',
     dotClassName: 'bg-status-review',
+    textClassName: 'text-status-review',
     icon: EyeIcon,
   },
   DONE: {
     label: 'Terminé',
     badgeClassName: 'bg-status-done/10 text-status-done',
     dotClassName: 'bg-status-done',
+    textClassName: 'text-status-done',
     icon: CircleCheckBigIcon,
   },
 } as const satisfies Record<TaskStatus, TaskMeta>
@@ -60,18 +66,21 @@ export const TASK_PRIORITY_META = {
     label: 'Basse',
     badgeClassName: 'bg-priority-low/10 text-priority-low',
     dotClassName: 'bg-priority-low',
+    textClassName: 'text-priority-low',
     icon: ArrowDownIcon,
   },
   MEDIUM: {
     label: 'Moyenne',
     badgeClassName: 'bg-priority-medium/10 text-priority-medium',
     dotClassName: 'bg-priority-medium',
+    textClassName: 'text-priority-medium',
     icon: ArrowRightIcon,
   },
   HIGH: {
     label: 'Haute',
     badgeClassName: 'bg-priority-high/10 text-priority-high',
     dotClassName: 'bg-priority-high',
+    textClassName: 'text-priority-high',
     icon: ArrowUpIcon,
   },
 } as const satisfies Record<TaskPriority, TaskMeta>

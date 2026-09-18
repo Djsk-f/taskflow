@@ -25,6 +25,17 @@ export type TaskPayload = {
   dueDate?: string
 }
 
+export type TaskStats = {
+  total: number
+  byStatus: Record<TaskStatus, number>
+  openByPriority: Record<TaskPriority, number>
+  overdue: number
+  dueThisWeek: number
+}
+
+export const TASK_VIEWS = ['kanban', 'table', 'list'] as const
+export type TaskView = (typeof TASK_VIEWS)[number]
+
 export type TaskFilters = {
   search: string
   status: TaskStatus | null
