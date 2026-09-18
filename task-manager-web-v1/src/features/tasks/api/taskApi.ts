@@ -16,6 +16,14 @@ export const taskApi = {
     return data
   },
 
+  /** Tâches proposées au sélecteur de la feuille de temps : par titre, 50 au plus (plafond serveur). */
+  async listForPicker(): Promise<Task[]> {
+    const { data } = await httpClient.get<PageResponse<Task>>('/tasks', {
+      params: { page: 0, size: 50, sort: 'title,asc' },
+    })
+    return data.content
+  },
+
   async create(payload: TaskPayload): Promise<Task> {
     const { data } = await httpClient.post<Task>('/tasks', payload)
     return data

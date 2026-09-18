@@ -7,7 +7,8 @@ type FormTextFieldProps<TValues extends FieldValues> = {
   control: Control<TValues>
   name: FieldPath<TValues>
   label: string
-  type?: 'text' | 'email' | 'password' | 'datetime-local'
+  type?: 'text' | 'email' | 'password' | 'date' | 'datetime-local'
+  hint?: string
   placeholder?: string
   autoComplete?: string
   className?: string
@@ -24,6 +25,7 @@ export function FormTextField<TValues extends FieldValues>({
   type = 'text',
   placeholder,
   autoComplete,
+  hint,
   className,
 }: FormTextFieldProps<TValues>) {
   return (
@@ -31,10 +33,10 @@ export function FormTextField<TValues extends FieldValues>({
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <FormFieldShell name={name} label={label} error={fieldState.error} className={className}>
+        <FormFieldShell name={name} label={label} error={fieldState.error} hint={hint} className={className}>
           <Input
             {...field}
-            {...fieldControlProps(name, fieldState.error)}
+            {...fieldControlProps(name, fieldState.error, hint !== undefined)}
             value={field.value ?? ''}
             type={type}
             placeholder={placeholder}

@@ -10,6 +10,7 @@ import { TasksPagination } from '@/features/tasks/components/TasksPagination'
 import { TaskViewTabs } from '@/features/tasks/components/TaskViewTabs'
 import { useMoveTask } from '@/features/tasks/hooks/useMoveTask'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
+import { LogTimeDialog } from '@/features/timesheets/components/LogTimeDialog'
 import {
   hasActiveFilters,
   readTaskFilters,
@@ -49,6 +50,7 @@ export function TasksPage() {
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined)
   const [createStatus, setCreateStatus] = useState<TaskStatus>('TODO')
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
+  const [taskToLog, setTaskToLog] = useState<Task | null>(null)
   const { moveTask, pendingMoves } = useMoveTask()
   const { t } = useTranslation()
 
@@ -84,6 +86,7 @@ export function TasksPage() {
     },
     onDelete: setTaskToDelete,
     onMove: moveTask,
+    onLogTime: setTaskToLog,
   }
 
   const resetFilters = () => {
@@ -137,6 +140,7 @@ export function TasksPage() {
 
       <TaskFormDialog open={formOpen} onOpenChange={setFormOpen} task={taskToEdit} defaultStatus={createStatus} />
       <DeleteTaskDialog task={taskToDelete} onClose={() => setTaskToDelete(null)} />
+      <LogTimeDialog task={taskToLog} onClose={() => setTaskToLog(null)} />
     </AppShell>
   )
 }

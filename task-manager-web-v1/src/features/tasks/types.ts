@@ -15,6 +15,8 @@ export type Task = {
   dueDate?: string
   createdAt: string
   updatedAt: string
+  /** Temps total saisi sur la tâche (feuilles de temps), en minutes. */
+  timeSpentMinutes: number
 }
 
 export type TaskPayload = {

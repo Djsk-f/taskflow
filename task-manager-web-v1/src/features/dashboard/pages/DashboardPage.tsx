@@ -3,12 +3,15 @@ import { StatTile } from '@/features/dashboard/components/StatTile'
 import { StatusBreakdown } from '@/features/dashboard/components/StatusBreakdown'
 import { UpcomingDeadlines } from '@/features/dashboard/components/UpcomingDeadlines'
 import { useTaskStats } from '@/features/tasks/hooks/useTaskInsights'
+import { useTimeEntries } from '@/features/timesheets/hooks/useTimeEntries'
+import { formatDuration } from '@/shared/lib/duration'
+import { addDays, startOfWeek, toIsoDate } from '@/shared/lib/week'
 import { extractApiError } from '@/shared/api/extractApiError'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { AppShell } from '@/shared/components/layout/AppShell'
 import { Skeleton } from '@/shared/ui/skeleton'
-import { AlarmClockIcon, CalendarRangeIcon, CircleCheckBigIcon, LayoutGridIcon, ListChecksIcon } from 'lucide-react'
+import { AlarmClockIcon, CalendarRangeIcon, CircleCheckBigIcon, ClockIcon, LayoutGridIcon, ListChecksIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -17,6 +20,9 @@ export function DashboardPage() {
   const { data, isPending, isError, error, refetch } = useTaskStats()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const monday = startOfWeek(new Date())
+  const { data: weekEntries } = useTimeEntries(toIsoDate(monday), toIsoDate(addDays(monday, 6)))
+  const weekMinutes = (weekEntries ?? []).reduce((sum, entry) => sum + entry.durationMinutes, 0)
 
   return (
     <AppShell title={t('dashboard.title')}>
@@ -43,7 +49,7 @@ export function DashboardPage() {
 
       {data && data.total > 0 && (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <StatTile
               label={t('dashboard.tiles.total')}
               value={data.total}
@@ -68,6 +74,12 @@ export function DashboardPage() {
               value={data.dueThisWeek}
               hint={t('dashboard.tiles.weekHint')}
               icon={CalendarRangeIcon}
+            />
+            <StatTile
+              label={t('dashboard.tiles.timeWeek')}
+              value={formatDuration(weekMinutes)}
+              hint={t('dashboard.tiles.timeWeekHint')}
+              icon={ClockIcon}
             />
           </div>
 

@@ -1,5 +1,6 @@
 import { TaskPriorityBadge, TaskStatusBadge } from '@/features/tasks/components/TaskBadges'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
+import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
 import { TaskList } from '@/features/tasks/components/TaskList'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
@@ -22,6 +23,7 @@ export function TaskTable({ tasks, ...actions }: { tasks: Task[] } & TaskActionH
               <TableHead className="w-36">{t('tasks.table.status')}</TableHead>
               <TableHead className="w-36">{t('tasks.table.priority')}</TableHead>
               <TableHead className="w-48">{t('tasks.table.dueDate')}</TableHead>
+              <TableHead className="w-24">{t('tasks.table.time')}</TableHead>
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
@@ -44,6 +46,9 @@ export function TaskTable({ tasks, ...actions }: { tasks: Task[] } & TaskActionH
                 </TableCell>
                 <TableCell>
                   <TaskDueDate task={task} />
+                </TableCell>
+                <TableCell>
+                  <TaskTimeSpent task={task} showEmpty />
                 </TableCell>
                 <TableCell>
                   <TaskRowActions task={task} {...actions} />

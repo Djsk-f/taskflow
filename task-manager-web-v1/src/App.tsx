@@ -5,6 +5,7 @@ import { RegisterPage } from '@/features/auth/pages/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { ProfilePage } from '@/features/profile/pages/ProfilePage'
 import { TasksPage } from '@/features/tasks/pages/TasksPage'
+import { TimesheetPage } from '@/features/timesheets/pages/TimesheetPage'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 export function App() {
@@ -39,6 +40,14 @@ export function App() {
         element={
           <ProtectedRoute>
             <TasksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/timesheets"
+        element={
+          <ProtectedRoute>
+            <TimesheetPage />
           </ProtectedRoute>
         }
       />

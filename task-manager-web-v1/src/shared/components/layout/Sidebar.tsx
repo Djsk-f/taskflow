@@ -4,6 +4,7 @@ import { useTheme } from '@/shared/theme/useTheme'
 import { Switch } from '@/shared/ui/switch'
 import {
   CircleCheckBigIcon,
+  ClockIcon,
   LanguagesIcon,
   LayoutGridIcon,
   MoonIcon,
@@ -14,11 +15,16 @@ import {
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 
-type NavItem = { to: string; labelKey: 'nav.dashboard' | 'nav.tasks' | 'nav.settings'; icon: LucideIcon }
+type NavItem = {
+  to: string
+  labelKey: 'nav.dashboard' | 'nav.tasks' | 'nav.timesheets' | 'nav.settings'
+  icon: LucideIcon
+}
 
 const MENU: NavItem[] = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutGridIcon },
   { to: '/tasks', labelKey: 'nav.tasks', icon: SquareCheckBigIcon },
+  { to: '/timesheets', labelKey: 'nav.timesheets', icon: ClockIcon },
 ]
 
 const FOOTER: NavItem[] = [{ to: '/profile', labelKey: 'nav.settings', icon: SettingsIcon }]

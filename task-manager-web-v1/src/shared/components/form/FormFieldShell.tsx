@@ -1,4 +1,4 @@
-import { fieldErrorId } from '@/shared/components/form/fieldA11y'
+import { fieldErrorId, fieldHintId } from '@/shared/components/form/fieldA11y'
 import { translateMessage } from '@/shared/i18n/translateMessage'
 import { cn } from '@/shared/lib/utils'
 import { Label } from '@/shared/ui/label'
@@ -15,12 +15,15 @@ export function FormFieldShell({
   name,
   label,
   error,
+  hint,
   className,
   children,
 }: {
   name: string
   label: string
   error?: FieldError
+  /** Aide affichée sous le contrôle (format attendu, exemple). */
+  hint?: string
   className?: string
   children: ReactNode
 }) {
@@ -29,6 +32,11 @@ export function FormFieldShell({
     <div className={cn('space-y-1.5', className)}>
       <Label htmlFor={name}>{label}</Label>
       {children}
+      {hint && (
+        <p id={fieldHintId(name)} className="text-muted-foreground text-xs">
+          {hint}
+        </p>
+      )}
       {error && (
         <p id={fieldErrorId(name)} className="text-destructive text-sm">
           {translateMessage(t, error.message)}

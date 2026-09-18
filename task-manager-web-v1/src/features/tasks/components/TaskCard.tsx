@@ -1,5 +1,6 @@
 import { TaskPriorityBadge } from '@/features/tasks/components/TaskBadges'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
+import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
 import { cn } from '@/shared/lib/utils'
@@ -67,7 +68,10 @@ function TaskCardContent({ task, ...actions }: TaskCardProps) {
         </p>
       )}
       <div className="mt-3 flex items-center justify-between border-t pt-2">
-        <TaskPriorityBadge priority={task.priority} />
+        <div className="flex items-center gap-2">
+          <TaskPriorityBadge priority={task.priority} />
+          <TaskTimeSpent task={task} />
+        </div>
         <div {...stopDrag}>
           <TaskRowActions task={task} {...actions} />
         </div>

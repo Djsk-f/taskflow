@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
-import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { ClockPlusIcon, MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 /** Actions possibles sur une tâche, transmises telles quelles par chaque vue. */
@@ -17,13 +17,14 @@ export type TaskActionHandlers = {
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
   onMove: (task: Task, status: TaskStatus) => void
+  onLogTime: (task: Task) => void
 }
 
 /**
  * Menu d'actions d'une tâche, commun au tableau, à la liste et aux cartes Kanban.
  * « Déplacer vers » est l'alternative clavier et tactile au glisser-déposer.
  */
-export function TaskRowActions({ task, onEdit, onDelete, onMove }: { task: Task } & TaskActionHandlers) {
+export function TaskRowActions({ task, onEdit, onDelete, onMove, onLogTime }: { task: Task } & TaskActionHandlers) {
   const { t } = useTranslation()
   return (
     <DropdownMenu>
@@ -36,6 +37,10 @@ export function TaskRowActions({ task, onEdit, onDelete, onMove }: { task: Task 
         <DropdownMenuItem onSelect={() => onEdit(task)}>
           <PencilIcon className="size-4" />
           {t('tasks.actions.edit')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onLogTime(task)}>
+          <ClockPlusIcon className="size-4" />
+          {t('tasks.actions.logTime')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">{t('tasks.actions.moveTo')}</DropdownMenuLabel>
