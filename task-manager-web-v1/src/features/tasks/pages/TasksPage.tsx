@@ -9,7 +9,8 @@ import { TaskTable } from '@/features/tasks/components/TaskTable'
 import { TaskTableSkeleton } from '@/features/tasks/components/TaskTableSkeleton'
 import { TaskViewTabs } from '@/features/tasks/components/TaskViewTabs'
 import { useMoveTask } from '@/features/tasks/hooks/useMoveTask'
-import { useTasks } from '@/features/tasks/hooks/useTasks'
+import { TASKS_QUERY_KEY, useTasks } from '@/features/tasks/hooks/useTasks'
+import { taskApi } from '@/features/tasks/api/taskApi'
 import { LogTimeDialog } from '@/features/timesheets/components/LogTimeDialog'
 import {
   hasActiveFilters,
@@ -27,11 +28,13 @@ import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { AppShell } from '@/shared/components/layout/AppShell'
 import { Pagination } from '@/shared/components/pagination/Pagination'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/shared/ui/button'
 import { ListChecksIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -64,6 +67,45 @@ export function TasksPage() {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
   const [taskToLog, setTaskToLog] = useState<Task | null>(null)
   const { moveTask, pendingMoves } = useMoveTask()
+
+  // Lien direct vers une tâche (cloche, notification du navigateur) : ?task=42 l'ouvre
+  // en modification, puis le paramètre est retiré (un rechargement ne la rouvre pas).
+  const linkedTaskId = Number(searchParams.get('task')) || null
+  const linkedTask = useQuery({
+    queryKey: [TASKS_QUERY_KEY, 'one', linkedTaskId],
+    queryFn: () => taskApi.get(linkedTaskId as number),
+    enabled: linkedTaskId !== null,
+    retry: false,
+  })
+  // Ajusté pendant le rendu (pas d'effet) ; remis à zéro une fois le lien consommé, pour
+  // qu'une seconde notification sur la même tâche la rouvre.
+  const [openedLink, setOpenedLink] = useState<number | null>(null)
+  if (linkedTaskId === null && openedLink !== null) {
+    setOpenedLink(null)
+  }
+  if (linkedTask.data && linkedTask.data.id !== openedLink) {
+    setOpenedLink(linkedTask.data.id)
+    setDraft(null)
+    setTaskToEdit(linkedTask.data)
+    setFormOpen(true)
+  }
+  const linkSettled = linkedTaskId !== null && !linkedTask.isPending
+  useEffect(() => {
+    if (!linkSettled) {
+      return
+    }
+    if (linkedTask.isError) {
+      toast.error(extractApiError(linkedTask.error).message)
+    }
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params)
+        next.delete('task')
+        return next
+      },
+      { replace: true },
+    )
+  }, [linkSettled]) // eslint-disable-line react-hooks/exhaustive-deps
   const { t } = useTranslation()
 
   /** Filtres et vue vivent dans l'URL ; un changement de filtre ramène en page 1. */

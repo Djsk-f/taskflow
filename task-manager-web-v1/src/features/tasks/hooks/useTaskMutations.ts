@@ -1,4 +1,5 @@
 import { taskApi } from '@/features/tasks/api/taskApi'
+import { NOTIFICATIONS_QUERY_KEY } from '@/features/notifications/hooks/useNotifications'
 import { TASKS_QUERY_KEY } from '@/features/tasks/hooks/useTasks'
 import type { TaskPayload, TaskStatus } from '@/features/tasks/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -14,7 +15,12 @@ import { toast } from 'sonner'
 export function useTaskMutations() {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
-  const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] })
+  // Modifier une tâche peut retirer ses rappels (échéance déplacée, tâche terminée).
+  const invalidateTasks = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] }),
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_QUERY_KEY] }),
+    ])
 
   const createTask = useMutation({
     mutationFn: (payload: TaskPayload) => taskApi.create(payload),

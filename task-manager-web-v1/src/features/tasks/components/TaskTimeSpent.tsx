@@ -11,7 +11,7 @@ export function TaskTimeSpent({ task, showEmpty = false }: { task: Task; showEmp
     return showEmpty ? <span className="text-muted-foreground text-sm">—</span> : null
   }
   return (
-    <span className="text-muted-foreground inline-flex items-center gap-1 text-xs font-medium tabular-nums">
+    <span className="text-muted-foreground inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap tabular-nums">
       <ClockIcon className="size-3.5" />
       {formatDuration(task.timeSpentMinutes)}
     </span>

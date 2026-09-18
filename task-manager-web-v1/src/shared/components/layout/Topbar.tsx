@@ -1,5 +1,5 @@
 import { useAuth } from '@/features/auth/useAuth'
-import { NotificationBell } from '@/features/tasks/components/NotificationBell'
+import { NotificationBell } from '@/features/notifications/components/NotificationBell'
 import { Button } from '@/shared/ui/button'
 import {
   DropdownMenu,

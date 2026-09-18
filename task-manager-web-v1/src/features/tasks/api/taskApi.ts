@@ -26,6 +26,11 @@ export const taskApi = {
     return data.content
   },
 
+  async get(id: number): Promise<Task> {
+    const { data } = await httpClient.get<Task>(`/tasks/${id}`)
+    return data
+  },
+
   async create(payload: TaskPayload): Promise<Task> {
     const { data } = await httpClient.post<Task>('/tasks', payload)
     return data
