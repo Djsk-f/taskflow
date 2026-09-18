@@ -29,6 +29,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final LoginAttemptGuard loginAttemptGuard;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -48,12 +49,15 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         String email = Emails.normalize(request.email());
+        loginAttemptGuard.checkAllowed(email);
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
         } catch (AuthenticationException exception) {
+            loginAttemptGuard.recordFailure(email);
             // Email inconnu et mot de passe erroné donnent la même réponse (EX-02).
             throw new InvalidCredentialsException();
         }
+        loginAttemptGuard.reset(email);
         User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
         return buildAuthResponse(user);
     }

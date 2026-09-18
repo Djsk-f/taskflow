@@ -47,9 +47,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                                               HttpServletRequest request) {
         log.warn("{} sur {} : {}", exception.getCode(), request.getRequestURI(), exception.getMessageKey());
         String message = messages.get(exception.getMessageKey(), exception.getArgs());
-        return ResponseEntity
-                .status(exception.getCode().getStatus())
-                .body(ApiErrorResponse.of(exception.getCode(), message, request.getRequestURI()));
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(exception.getCode().getStatus());
+        if (exception instanceof TooManyAttemptsException tooMany) {
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(tooMany.getRetryAfterSeconds()));
+        }
+        return response.body(ApiErrorResponse.of(exception.getCode(), message, request.getRequestURI()));
     }
 
     /**
