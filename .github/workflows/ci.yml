@@ -45,16 +45,42 @@ jobs:
           cache-dependency-path: task-manager-web-v1/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       # Vérification stricte des types (tsc -b) puis build de production.
       - run: npm run build
         env:
           VITE_API_BASE_URL: /api/v1
 
-  docker:
-    name: Images Docker
+  e2e:
+    name: Docker + bout en bout (Playwright)
     runs-on: ubuntu-latest
     needs: [api, web]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --tag taskflow-api ./task-manager-api-v1
-      - run: docker build --tag taskflow-web ./task-manager-web-v1
+      # Configuration de démonstration : .env.example et un secret JWT généré pour ce run.
+      - name: Préparer .env
+        run: |
+          cp .env.example .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" .env
+      # Construit les deux images et attend que MySQL et l'API soient sains.
+      - run: docker compose up -d --build --wait
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: task-manager-web-v1/package-lock.json
+      - run: npm ci
+        working-directory: task-manager-web-v1
+      - run: npx playwright install --with-deps chromium
+        working-directory: task-manager-web-v1
+      - run: npx playwright test
+        working-directory: task-manager-web-v1
+      - name: Journaux de l'API en cas d'échec
+        if: failure()
+        run: docker compose logs api
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: task-manager-web-v1/playwright-report
+          retention-days: 7
