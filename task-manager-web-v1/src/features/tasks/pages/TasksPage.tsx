@@ -6,13 +6,13 @@ import { TaskList } from '@/features/tasks/components/TaskList'
 import type { TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import { TaskTable } from '@/features/tasks/components/TaskTable'
 import { TaskTableSkeleton } from '@/features/tasks/components/TaskTableSkeleton'
-import { TasksPagination } from '@/features/tasks/components/TasksPagination'
 import { TaskViewTabs } from '@/features/tasks/components/TaskViewTabs'
 import { useMoveTask } from '@/features/tasks/hooks/useMoveTask'
 import { useTasks } from '@/features/tasks/hooks/useTasks'
 import { LogTimeDialog } from '@/features/timesheets/components/LogTimeDialog'
 import {
   hasActiveFilters,
+  PAGE_SIZES,
   readTaskFilters,
   readTaskView,
   withTaskView,
@@ -23,6 +23,7 @@ import { extractApiError } from '@/shared/api/extractApiError'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { AppShell } from '@/shared/components/layout/AppShell'
+import { Pagination } from '@/shared/components/pagination/Pagination'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { Button } from '@/shared/ui/button'
 import { ListChecksIcon, PlusIcon, SearchXIcon } from 'lucide-react'
@@ -133,6 +134,7 @@ export function TasksPage() {
           filters={filters}
           actions={actions}
           onPageChange={(page) => applyFilters({ page })}
+          onPageSizeChange={(size) => applyFilters({ size, page: 0 })}
           onCreate={() => openCreateForm()}
           onResetFilters={resetFilters}
         />
@@ -150,12 +152,21 @@ type PaginatedTasksProps = {
   filters: TaskFilters
   actions: TaskActionHandlers
   onPageChange: (page: number) => void
+  onPageSizeChange: (size: number) => void
   onCreate: () => void
   onResetFilters: () => void
 }
 
 /** Vues Tableau et Liste : mêmes données paginées, mêmes quatre états, rendu différent. */
-function PaginatedTasks({ view, filters, actions, onPageChange, onCreate, onResetFilters }: PaginatedTasksProps) {
+function PaginatedTasks({
+  view,
+  filters,
+  actions,
+  onPageChange,
+  onPageSizeChange,
+  onCreate,
+  onResetFilters,
+}: PaginatedTasksProps) {
   const { data, isPending, isError, error, refetch } = useTasks(filters)
   const { t } = useTranslation()
 
@@ -190,14 +201,18 @@ function PaginatedTasks({ view, filters, actions, onPageChange, onCreate, onRese
           ) : (
             <TaskList tasks={data.content} {...actions} />
           )}
-          <TasksPagination
+          <Pagination
             page={data.page}
-            size={data.size}
-            totalElements={data.totalElements}
             totalPages={data.totalPages}
-            first={data.first}
-            last={data.last}
             onPageChange={onPageChange}
+            rangeLabel={t('tasks.pagination.range', {
+              from: data.page * data.size + 1,
+              to: data.page * data.size + data.content.length,
+              count: data.totalElements,
+            })}
+            pageSize={filters.size}
+            pageSizes={PAGE_SIZES}
+            onPageSizeChange={onPageSizeChange}
           />
         </>
       )}

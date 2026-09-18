@@ -11,6 +11,16 @@ export const fr = {
     retry: 'Réessayer',
     loading: 'Chargement…',
     choose: 'Choisir…',
+    showMore: 'Afficher plus',
+    pagination: {
+      label: 'Pagination',
+      previous: 'Page précédente',
+      next: 'Page suivante',
+      page: 'Page {{page}}',
+      compact: '{{page}} / {{pages}}',
+      pageSize: 'Par page',
+      pageSizeLabel: 'Nombre d’éléments par page',
+    },
   },
   language: {
     label: 'Langue',
@@ -118,9 +128,6 @@ export const fr = {
     pagination: {
       range_one: '{{from}}–{{to}} sur {{count}} tâche',
       range_other: '{{from}}–{{to}} sur {{count}} tâches',
-      page: 'Page {{page}} / {{pages}}',
-      previous: 'Précédent',
-      next: 'Suivant',
     },
     actions: {
       label: 'Actions sur « {{title}} »',
@@ -136,6 +143,9 @@ export const fr = {
       empty: 'Aucune tâche',
       more_one: '{{count}} autre — voir dans le tableau',
       more_other: '{{count}} autres — voir dans le tableau',
+      showMore: 'Afficher {{count}} de plus',
+      remaining_one: '{{count}} restante',
+      remaining_other: '{{count}} restantes',
       draggable: 'carte déplaçable',
       instructions:
         'Pour déplacer la carte, appuyer sur Espace, utiliser les flèches pour changer de colonne, puis Espace pour déposer ou Échap pour annuler.',
@@ -188,7 +198,10 @@ export const fr = {
       cellEmpty: '{{task}}, {{day}} : aucune saisie',
     },
     addRow: 'Ajouter une tâche',
-    addRowPlaceholder: 'Choisir une tâche…',
+    addRowPlaceholder: 'Rechercher une tâche à ajouter…',
+    addRowNoResult: 'Aucune tâche ne correspond.',
+    addRowCount_one: '{{count}} suggestion',
+    addRowCount_other: '{{count}} suggestions',
     empty: {
       title: 'Aucun temps saisi cette semaine',
       description: 'Ajoutez une tâche à la feuille, puis cliquez sur un jour pour saisir le temps passé.',
@@ -215,6 +228,8 @@ export const fr = {
       submit: 'Ajouter',
       history: 'Temps déjà saisi',
       historyEmpty: 'Aucun temps saisi sur cette tâche.',
+      historyMore_one: '{{count}} saisie de plus',
+      historyMore_other: '{{count}} saisies de plus',
       total: 'Total : {{duration}}',
     },
     csv: {
@@ -236,6 +251,7 @@ export const fr = {
     empty: "Rien d'urgent : aucune échéance dans les prochaines 24 h.",
     overdue: 'En retard',
     upcoming: 'Dans les 24 h',
+    seeAll: 'Voir toutes les échéances ({{count}})',
   },
   dashboard: {
     title: 'Tableau de bord',

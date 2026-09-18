@@ -9,6 +9,8 @@ import {
 } from '@/features/tasks/types'
 
 export const DEFAULT_PAGE_SIZE = 10
+/** Tailles proposées ; 50 est le plafond du serveur. */
+export const PAGE_SIZES = [10, 20, 50] as const
 export const DEFAULT_VIEW: TaskView = 'kanban'
 
 /**
@@ -22,7 +24,7 @@ export function readTaskFilters(params: URLSearchParams): TaskFilters {
     status: parseEnum(params.get('status'), TASK_STATUSES),
     priority: parseEnum(params.get('priority'), TASK_PRIORITIES),
     page: Math.max(0, Number.parseInt(params.get('page') ?? '0', 10) || 0),
-    size: DEFAULT_PAGE_SIZE,
+    size: parsePageSize(params.get('size')),
   }
 }
 
@@ -39,6 +41,9 @@ export function writeTaskFilters(filters: TaskFilters): URLSearchParams {
   }
   if (filters.page > 0) {
     params.set('page', String(filters.page))
+  }
+  if (filters.size !== DEFAULT_PAGE_SIZE) {
+    params.set('size', String(filters.size))
   }
   return params
 }
@@ -60,6 +65,11 @@ export function withTaskView(params: URLSearchParams, view: TaskView): URLSearch
 
 export function hasActiveFilters(filters: TaskFilters): boolean {
   return filters.search !== '' || filters.status !== null || filters.priority !== null
+}
+
+function parsePageSize(value: string | null): number {
+  const size = Number(value)
+  return (PAGE_SIZES as readonly number[]).includes(size) ? size : DEFAULT_PAGE_SIZE
 }
 
 /** Une valeur d'URL inconnue est ignorée plutôt que transmise au serveur. */

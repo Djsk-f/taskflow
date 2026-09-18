@@ -1,23 +1,35 @@
 import { TaskStatusBadge } from '@/features/tasks/components/TaskBadges'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
 import { useDueTasks } from '@/features/tasks/hooks/useTaskInsights'
+import { CompactPager } from '@/shared/components/pagination/CompactPager'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { CalendarCheckIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const WEEK_HOURS = 7 * 24
+/** Lignes par page : le bloc garde une hauteur stable à côté des priorités. */
+const PAGE_SIZE = 5
 
 /** Échéances en retard ou dans les 7 prochains jours ; chaque ligne mène à la tâche. */
 export function UpcomingDeadlines() {
   const { data, isPending, isError } = useDueTasks(WEEK_HOURS)
   const { t } = useTranslation()
+  const [page, setPage] = useState(0)
+  const totalPages = Math.ceil((data?.length ?? 0) / PAGE_SIZE)
+  // Une échéance traitée peut réduire le nombre de pages : on reste sur une page existante.
+  const currentPage = Math.min(page, Math.max(totalPages - 1, 0))
+  const visible = (data ?? []).slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE)
 
   return (
     <section className="bg-card shadow-card rounded-card border">
-      <div className="p-5 pb-3">
-        <h2 className="font-semibold">{t('dashboard.deadlines.title')}</h2>
-        <p className="text-muted-foreground text-sm">{t('dashboard.deadlines.subtitle')}</p>
+      <div className="flex items-start gap-2 p-5 pb-3">
+        <div className="flex-1">
+          <h2 className="font-semibold">{t('dashboard.deadlines.title')}</h2>
+          <p className="text-muted-foreground text-sm">{t('dashboard.deadlines.subtitle')}</p>
+        </div>
+        <CompactPager page={currentPage} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {isPending && (
@@ -39,7 +51,7 @@ export function UpcomingDeadlines() {
 
       {data && data.length > 0 && (
         <ul className="divide-y border-t">
-          {data.map((task) => (
+          {visible.map((task) => (
             <li key={task.id}>
               <Link
                 to={`/tasks?search=${encodeURIComponent(task.title)}`}

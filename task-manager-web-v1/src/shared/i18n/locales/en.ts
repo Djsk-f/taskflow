@@ -11,6 +11,16 @@ export const en: Dictionary<typeof fr> = {
     retry: 'Try again',
     loading: 'Loading…',
     choose: 'Choose…',
+    showMore: 'Show more',
+    pagination: {
+      label: 'Pagination',
+      previous: 'Previous page',
+      next: 'Next page',
+      page: 'Page {{page}}',
+      compact: '{{page}} / {{pages}}',
+      pageSize: 'Per page',
+      pageSizeLabel: 'Items per page',
+    },
   },
   language: {
     label: 'Language',
@@ -118,9 +128,6 @@ export const en: Dictionary<typeof fr> = {
     pagination: {
       range_one: '{{from}}–{{to}} of {{count}} task',
       range_other: '{{from}}–{{to}} of {{count}} tasks',
-      page: 'Page {{page}} / {{pages}}',
-      previous: 'Previous',
-      next: 'Next',
     },
     actions: {
       label: 'Actions for "{{title}}"',
@@ -136,6 +143,9 @@ export const en: Dictionary<typeof fr> = {
       empty: 'No tasks',
       more_one: '{{count}} more — view in table',
       more_other: '{{count}} more — view in table',
+      showMore: 'Show {{count}} more',
+      remaining_one: '{{count}} left',
+      remaining_other: '{{count}} left',
       draggable: 'draggable card',
       instructions:
         'To move the card, press Space, use the arrow keys to change column, then Space to drop or Escape to cancel.',
@@ -188,7 +198,10 @@ export const en: Dictionary<typeof fr> = {
       cellEmpty: '{{task}}, {{day}}: no time logged',
     },
     addRow: 'Add a task',
-    addRowPlaceholder: 'Choose a task…',
+    addRowPlaceholder: 'Search a task to add…',
+    addRowNoResult: 'No matching task.',
+    addRowCount_one: '{{count}} suggestion',
+    addRowCount_other: '{{count}} suggestions',
     empty: {
       title: 'No time logged this week',
       description: 'Add a task to the timesheet, then click a day to log the time spent.',
@@ -215,6 +228,8 @@ export const en: Dictionary<typeof fr> = {
       submit: 'Add',
       history: 'Time already logged',
       historyEmpty: 'No time logged on this task yet.',
+      historyMore_one: '{{count}} more entry',
+      historyMore_other: '{{count}} more entries',
       total: 'Total: {{duration}}',
     },
     csv: {
@@ -236,6 +251,7 @@ export const en: Dictionary<typeof fr> = {
     empty: 'Nothing urgent: no deadline in the next 24 hours.',
     overdue: 'Overdue',
     upcoming: 'Within 24 hours',
+    seeAll: 'See all deadlines ({{count}})',
   },
   dashboard: {
     title: 'Dashboard',

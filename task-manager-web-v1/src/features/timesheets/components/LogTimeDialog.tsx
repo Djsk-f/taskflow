@@ -16,6 +16,9 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
+/** Saisies d'historique montrées d'abord, puis ajoutées par lots. */
+const HISTORY_STEP = 5
+
 type LogTimeDialogProps = {
   /** Tâche visée ; null ferme la fenêtre. */
   task: Task | null
@@ -28,6 +31,7 @@ export function LogTimeDialog({ task, onClose }: LogTimeDialogProps) {
   const { createEntry, deleteEntry } = useTimeEntryMutations()
   const { data: entries, isPending } = useTaskTimeEntries(task?.id)
   const [alert, setAlert] = useState<string | null>(null)
+  const [visibleCount, setVisibleCount] = useState(HISTORY_STEP)
 
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntryFormSchema),
@@ -40,8 +44,10 @@ export function LogTimeDialog({ task, onClose }: LogTimeDialogProps) {
     }
   }, [task, form])
 
+  // Remise à zéro à la fermeture : la fenêtre se ferme toujours avant de se rouvrir.
   const close = () => {
     setAlert(null)
+    setVisibleCount(HISTORY_STEP)
     onClose()
   }
 
@@ -117,8 +123,8 @@ export function LogTimeDialog({ task, onClose }: LogTimeDialogProps) {
             <p className="text-muted-foreground text-sm">{t('timesheets.form.historyEmpty')}</p>
           )}
           {entries && entries.length > 0 && (
-            <ul className="max-h-56 divide-y overflow-y-auto">
-              {entries.map((entry) => (
+            <ul className="divide-y">
+              {entries.slice(0, visibleCount).map((entry) => (
                 <li key={entry.id} className="flex items-center gap-3 py-1.5">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">
@@ -141,6 +147,14 @@ export function LogTimeDialog({ task, onClose }: LogTimeDialogProps) {
                 </li>
               ))}
             </ul>
+          )}
+          {entries && entries.length > visibleCount && (
+            <Button variant="ghost" className="text-primary mt-1 w-full" onClick={() => setVisibleCount((n) => n + HISTORY_STEP)}>
+              {t('common.showMore')}
+              <span className="text-muted-foreground text-xs font-normal">
+                · {t('timesheets.form.historyMore', { count: entries.length - visibleCount })}
+              </span>
+            </Button>
           )}
         </section>
       </DialogContent>

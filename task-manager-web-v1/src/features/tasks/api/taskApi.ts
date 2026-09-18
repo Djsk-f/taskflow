@@ -16,10 +16,10 @@ export const taskApi = {
     return data
   },
 
-  /** Tâches proposées au sélecteur de la feuille de temps : par titre, 50 au plus (plafond serveur). */
-  async listForPicker(): Promise<Task[]> {
+  /** Suggestions du champ « Ajouter une tâche » de la feuille de temps : 10 au plus, par titre. */
+  async suggest(search: string): Promise<Task[]> {
     const { data } = await httpClient.get<PageResponse<Task>>('/tasks', {
-      params: { page: 0, size: 50, sort: 'title,asc' },
+      params: { search: search || undefined, page: 0, size: 10, sort: 'title,asc' },
     })
     return data.content
   },

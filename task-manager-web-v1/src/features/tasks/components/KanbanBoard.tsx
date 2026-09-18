@@ -24,8 +24,10 @@ import { useQueries } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-/** Nombre maximal de cartes chargées par colonne (plafond serveur) ; le reste est dans le tableau. */
-const COLUMN_SIZE = 50
+/** Cartes affichées d'abord par colonne, puis ajoutées par lots de la même taille. */
+const COLUMN_STEP = 10
+/** Au-delà (plafond serveur), la colonne renvoie vers le tableau paginé. */
+const COLUMN_MAX = 50
 
 type KanbanBoardProps = {
   search: string
@@ -41,11 +43,19 @@ type KanbanBoardProps = {
  * priorité s'appliquent à toutes les colonnes.
  */
 export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowInTable, ...actions }: KanbanBoardProps) {
+  const [limits, setLimits] = useState<Record<TaskStatus, number>>({
+    TODO: COLUMN_STEP,
+    IN_PROGRESS: COLUMN_STEP,
+    IN_REVIEW: COLUMN_STEP,
+    DONE: COLUMN_STEP,
+  })
   const queries = useQueries({
     queries: TASK_STATUSES.map((status) =>
-      tasksQueryOptions({ search, priority, status, page: 0, size: COLUMN_SIZE }),
+      tasksQueryOptions({ search, priority, status, page: 0, size: limits[status] }),
     ),
   })
+  const showMore = (status: TaskStatus) =>
+    setLimits((current) => ({ ...current, [status]: Math.min(current[status] + COLUMN_STEP, COLUMN_MAX) }))
   const columns = TASK_STATUSES.map((status, index) => ({ status, query: queries[index] }))
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const { t } = useTranslation()
@@ -113,6 +123,10 @@ export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowIn
               tasks={tasks}
               total={total}
               isLoading={query.isPending}
+              isLoadingMore={query.isPlaceholderData}
+              canShowMore={limits[status] < COLUMN_MAX}
+              step={COLUMN_STEP}
+              onShowMore={() => showMore(status)}
               onCreate={onCreate}
               onShowInTable={onShowInTable}
               {...actions}

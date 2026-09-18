@@ -12,7 +12,7 @@ import {
 } from '@/shared/ui/dropdown-menu'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { useDroppable } from '@dnd-kit/core'
-import { MoreHorizontalIcon, PlusIcon, Table2Icon } from 'lucide-react'
+import { ChevronDownIcon, Loader2Icon, MoreHorizontalIcon, PlusIcon, Table2Icon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 type KanbanColumnProps = {
@@ -21,6 +21,12 @@ type KanbanColumnProps = {
   /** Nombre total de tâches de ce statut (toutes ne sont pas forcément chargées). */
   total: number
   isLoading: boolean
+  /** Lot suivant en cours de chargement (les cartes déjà là restent affichées). */
+  isLoadingMore: boolean
+  /** Faux au plafond serveur : le reste se consulte dans le tableau paginé. */
+  canShowMore: boolean
+  step: number
+  onShowMore: () => void
   onCreate: (status: TaskStatus) => void
   onShowInTable: (status: TaskStatus) => void
 } & TaskActionHandlers
@@ -31,6 +37,10 @@ export function KanbanColumn({
   tasks,
   total,
   isLoading,
+  isLoadingMore,
+  canShowMore,
+  step,
+  onShowMore,
   onCreate,
   onShowInTable,
   ...actions
@@ -93,7 +103,17 @@ export function KanbanColumn({
           </p>
         )}
 
-        {!isLoading && hidden > 0 && (
+        {!isLoading && hidden > 0 && canShowMore && (
+          <Button variant="outline" className="bg-card" onClick={onShowMore} disabled={isLoadingMore}>
+            {isLoadingMore ? <Loader2Icon className="size-4 animate-spin" /> : <ChevronDownIcon className="size-4" />}
+            {t('tasks.kanban.showMore', { count: Math.min(step, hidden) })}
+            <span className="text-muted-foreground text-xs font-normal">
+              · {t('tasks.kanban.remaining', { count: hidden })}
+            </span>
+          </Button>
+        )}
+
+        {!isLoading && hidden > 0 && !canShowMore && (
           <Button variant="ghost" className="text-muted-foreground" onClick={() => onShowInTable(status)}>
             {t('tasks.kanban.more', { count: hidden })}
           </Button>

@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 const WINDOW_HOURS = 24
+/** Échéances listées par groupe ; au-delà, lien vers le tableau de bord. */
+const PER_GROUP = 5
 
 /**
  * Cloche de l'en-tête (capture) : tâches non terminées en retard ou à échéance sous 24 h.
@@ -64,9 +66,24 @@ export function NotificationBell() {
             </p>
           )}
 
-          <DueGroup title={t('notifications.overdue')} tasks={overdue} onSelect={openTask} />
-          <DueGroup title={t('notifications.upcoming')} tasks={upcoming} onSelect={openTask} />
+          <DueGroup title={t('notifications.overdue')} tasks={overdue.slice(0, PER_GROUP)} onSelect={openTask} />
+          <DueGroup title={t('notifications.upcoming')} tasks={upcoming.slice(0, PER_GROUP)} onSelect={openTask} />
         </div>
+
+        {(overdue.length > PER_GROUP || upcoming.length > PER_GROUP) && (
+          <div className="border-t p-1">
+            <Button
+              variant="ghost"
+              className="text-primary w-full"
+              onClick={() => {
+                setOpen(false)
+                navigate('/dashboard')
+              }}
+            >
+              {t('notifications.seeAll', { count })}
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   )

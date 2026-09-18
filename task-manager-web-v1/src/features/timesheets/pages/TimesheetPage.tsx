@@ -1,7 +1,6 @@
-import { taskApi } from '@/features/tasks/api/taskApi'
-import { TASKS_QUERY_KEY } from '@/features/tasks/hooks/useTasks'
 import { TASK_STATUS_META } from '@/features/tasks/taskMeta'
 import type { TaskStatus } from '@/features/tasks/types'
+import { TaskPicker } from '@/features/timesheets/components/TaskPicker'
 import { TimeCellEditor } from '@/features/timesheets/components/TimeCellEditor'
 import { exportTimesheetCsv } from '@/features/timesheets/exportTimesheetCsv'
 import { useTimeEntries } from '@/features/timesheets/hooks/useTimeEntries'
@@ -24,9 +23,7 @@ import {
 } from '@/shared/lib/week'
 import { Button } from '@/shared/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Skeleton } from '@/shared/ui/skeleton'
-import { useQuery } from '@tanstack/react-query'
 import { ChevronLeftIcon, ChevronRightIcon, ClockIcon, DownloadIcon, PlusIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -124,12 +121,13 @@ export function TimesheetPage() {
         )}
 
         {entries && rows.length > 0 && (
-          <div className="overflow-x-auto">
+          // Défilement dans la grille : l'en-tête des jours et la ligne des totaux restent visibles.
+          <div className="max-h-[65vh] overflow-auto">
             <table className="w-full min-w-[56rem] border-collapse text-sm">
               <caption className="sr-only">{t('timesheets.grid.caption')}</caption>
               <thead>
-                <tr className="border-b">
-                  <th scope="col" className="bg-card sticky left-0 z-10 w-40 px-4 py-3 text-left font-medium sm:w-64">
+                <tr className="bg-card sticky top-0 z-20 border-b shadow-[0_1px_0_var(--border)]">
+                  <th scope="col" className="bg-card sticky left-0 z-30 w-40 px-4 py-3 text-left font-medium sm:w-64">
                     {t('timesheets.grid.task')}
                   </th>
                   {days.map((day) => {
@@ -140,14 +138,14 @@ export function TimesheetPage() {
                         key={toIsoDate(day)}
                         scope="col"
                         aria-current={isToday ? 'date' : undefined}
-                        className={cn('px-2 py-3 text-center font-medium', isToday && 'bg-secondary text-primary')}
+                        className={cn('bg-card px-2 py-3 text-center font-medium', isToday && 'bg-secondary text-primary')}
                       >
                         <span className="text-muted-foreground block text-xs font-normal capitalize">{weekday}</span>
                         {number}
                       </th>
                     )
                   })}
-                  <th scope="col" className="px-4 py-3 text-right font-medium">
+                  <th scope="col" className="bg-card px-4 py-3 text-right font-medium">
                     {t('timesheets.grid.total')}
                   </th>
                 </tr>
@@ -184,8 +182,8 @@ export function TimesheetPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-muted/50">
-                  <th scope="row" className="bg-muted sticky left-0 z-10 px-4 py-3 text-left font-semibold">
+                <tr className="bg-muted sticky bottom-0 z-20 shadow-[0_-1px_0_var(--border)]">
+                  <th scope="row" className="bg-muted sticky left-0 z-30 px-4 py-3 text-left font-semibold">
                     {t('timesheets.grid.dailyTotal')}
                   </th>
                   {days.map((day) => {
@@ -204,10 +202,14 @@ export function TimesheetPage() {
         )}
 
         {entries && (
-          <AddRow
-            exclude={rows.map((row) => row.taskId)}
-            onAdd={(row) => setExtraRows({ week: from, rows: [...addedRows, row] })}
-          />
+          <div className="border-t px-4 py-3">
+            <TaskPicker
+              exclude={rows.map((row) => row.taskId)}
+              onPick={(task) =>
+                setExtraRows({ week: from, rows: [...addedRows, { taskId: task.id, title: task.title, status: task.status }] })
+              }
+            />
+          </div>
         )}
       </section>
     </AppShell>
@@ -256,40 +258,5 @@ function TimeCell({ row, day, minutes, entries }: { row: Row; day: Date; minutes
         <TimeCellEditor taskId={row.taskId} workDate={toIsoDate(day)} entries={entries} />
       </PopoverContent>
     </Popover>
-  )
-}
-
-/** Ajout d'une tâche à la feuille : elle apparaît comme ligne vide, prête à recevoir du temps. */
-function AddRow({ exclude, onAdd }: { exclude: number[]; onAdd: (row: Row) => void }) {
-  const { t } = useTranslation()
-  const { data: tasks } = useQuery({ queryKey: [TASKS_QUERY_KEY, 'picker'], queryFn: taskApi.listForPicker })
-  const available = (tasks ?? []).filter((task) => !exclude.includes(task.id))
-  if (available.length === 0) {
-    return null
-  }
-  return (
-    <div className="flex items-center gap-2 border-t px-4 py-3">
-      <PlusIcon className="text-muted-foreground size-4" />
-      <Select
-        value=""
-        onValueChange={(value) => {
-          const task = available.find((candidate) => String(candidate.id) === value)
-          if (task) {
-            onAdd({ taskId: task.id, title: task.title, status: task.status })
-          }
-        }}
-      >
-        <SelectTrigger className="w-full sm:w-80" aria-label={t('timesheets.addRow')}>
-          <SelectValue placeholder={t('timesheets.addRowPlaceholder')} />
-        </SelectTrigger>
-        <SelectContent>
-          {available.map((task) => (
-            <SelectItem key={task.id} value={String(task.id)}>
-              {task.title}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
   )
 }
