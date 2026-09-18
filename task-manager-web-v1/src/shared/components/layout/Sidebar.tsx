@@ -1,12 +1,22 @@
 import { cn } from '@/shared/lib/utils'
 import { useTheme } from '@/shared/theme/useTheme'
 import { Switch } from '@/shared/ui/switch'
-import { CircleCheckBigIcon, MoonIcon, SettingsIcon, SquareCheckBigIcon, type LucideIcon } from 'lucide-react'
+import {
+  CircleCheckBigIcon,
+  LayoutGridIcon,
+  MoonIcon,
+  SettingsIcon,
+  SquareCheckBigIcon,
+  type LucideIcon,
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 type NavItem = { to: string; label: string; icon: LucideIcon }
 
-const MENU: NavItem[] = [{ to: '/tasks', label: 'Tâches', icon: SquareCheckBigIcon }]
+const MENU: NavItem[] = [
+  { to: '/dashboard', label: 'Tableau de bord', icon: LayoutGridIcon },
+  { to: '/tasks', label: 'Tâches', icon: SquareCheckBigIcon },
+]
 
 const FOOTER: NavItem[] = [{ to: '/profile', label: 'Paramètres', icon: SettingsIcon }]
 

@@ -2,6 +2,7 @@ import { GuestRoute } from '@/app/GuestRoute'
 import { ProtectedRoute } from '@/app/ProtectedRoute'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { RegisterPage } from '@/features/auth/pages/RegisterPage'
+import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { ProfilePage } from '@/features/profile/pages/ProfilePage'
 import { TasksPage } from '@/features/tasks/pages/TasksPage'
 import { Navigate, Route, Routes } from 'react-router-dom'
@@ -23,6 +24,14 @@ export function App() {
           <GuestRoute>
             <RegisterPage />
           </GuestRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
         }
       />
       <Route

@@ -33,30 +33,30 @@ export type TaskMeta = {
 export const TASK_STATUS_META = {
   TODO: {
     label: 'À faire',
-    badgeClassName: 'bg-status-todo/10 text-status-todo',
+    badgeClassName: 'bg-status-todo/10 text-status-todo-text',
     dotClassName: 'bg-status-todo',
     textClassName: 'text-foreground',
     icon: CircleDashedIcon,
   },
   IN_PROGRESS: {
     label: 'En cours',
-    badgeClassName: 'bg-status-progress/10 text-status-progress',
+    badgeClassName: 'bg-status-progress/10 text-status-progress-text',
     dotClassName: 'bg-status-progress',
-    textClassName: 'text-status-progress',
+    textClassName: 'text-status-progress-text',
     icon: TimerIcon,
   },
   IN_REVIEW: {
     label: 'En revue',
-    badgeClassName: 'bg-status-review/10 text-status-review',
+    badgeClassName: 'bg-status-review/10 text-status-review-text',
     dotClassName: 'bg-status-review',
-    textClassName: 'text-status-review',
+    textClassName: 'text-status-review-text',
     icon: EyeIcon,
   },
   DONE: {
     label: 'Terminé',
-    badgeClassName: 'bg-status-done/10 text-status-done',
+    badgeClassName: 'bg-status-done/10 text-status-done-text',
     dotClassName: 'bg-status-done',
-    textClassName: 'text-status-done',
+    textClassName: 'text-status-done-text',
     icon: CircleCheckBigIcon,
   },
 } as const satisfies Record<TaskStatus, TaskMeta>
@@ -64,23 +64,23 @@ export const TASK_STATUS_META = {
 export const TASK_PRIORITY_META = {
   LOW: {
     label: 'Basse',
-    badgeClassName: 'bg-priority-low/10 text-priority-low',
+    badgeClassName: 'bg-priority-low/10 text-priority-low-text',
     dotClassName: 'bg-priority-low',
-    textClassName: 'text-priority-low',
+    textClassName: 'text-priority-low-text',
     icon: ArrowDownIcon,
   },
   MEDIUM: {
     label: 'Moyenne',
-    badgeClassName: 'bg-priority-medium/10 text-priority-medium',
+    badgeClassName: 'bg-priority-medium/10 text-priority-medium-text',
     dotClassName: 'bg-priority-medium',
-    textClassName: 'text-priority-medium',
+    textClassName: 'text-priority-medium-text',
     icon: ArrowRightIcon,
   },
   HIGH: {
     label: 'Haute',
-    badgeClassName: 'bg-priority-high/10 text-priority-high',
+    badgeClassName: 'bg-priority-high/10 text-priority-high-text',
     dotClassName: 'bg-priority-high',
-    textClassName: 'text-priority-high',
+    textClassName: 'text-priority-high-text',
     icon: ArrowUpIcon,
   },
 } as const satisfies Record<TaskPriority, TaskMeta>

@@ -20,8 +20,8 @@
   --popover: #ffffff;
   --popover-foreground: #1a2340;
 
-  /* Marque */
-  --primary: #4c6fff;
+  /* Marque — bleu de la capture, ajusté pour un contraste de texte >= 4,5:1 (WCAG AA) */
+  --primary: #4263eb;
   --primary-foreground: #ffffff;
   --secondary: #eef2ff;
   --secondary-foreground: #3a5be0;
@@ -33,7 +33,7 @@
   --muted-foreground: #8a94a6;
   --border: #e8ecf4;
   --input: #e8ecf4;
-  --ring: #4c6fff;
+  --ring: #4263eb;
 
   /* Retours */
   --destructive: #ef4444;
@@ -41,16 +41,28 @@
   --success: #10b981;
   --warning: #f59e0b;
 
-  /* Statuts — les quatre couleurs de colonnes de la capture */
-  --status-todo: #64748b;
-  --status-progress: #3b82f6;
+  /*
+   * Statuts — teintes de la capture (bleu, rose, vert) + indigo pour « À faire ».
+   * Validées au script dataviz (lisibilité daltonisme, clarté, chroma) en clair ET en
+   * sombre : la même palette sert les deux thèmes. Elles colorent les marques (points,
+   * barres, icônes) ; le texte utilise les variantes -text, contrastées à >= 4,5:1.
+   */
+  --status-todo: #6366f1;
+  --status-progress: #0aa0e2;
   --status-review: #ec4899;
-  --status-done: #10b981;
+  --status-done: #15803d;
+  --status-todo-text: #4338ca;
+  --status-progress-text: #0369a1;
+  --status-review-text: #be185d;
+  --status-done-text: #166534;
 
   /* Priorités */
   --priority-low: #64748b;
   --priority-medium: #f59e0b;
   --priority-high: #ef4444;
+  --priority-low-text: #475569;
+  --priority-medium-text: #b45309;
+  --priority-high-text: #b91c1c;
 }
 
 /*
@@ -80,8 +92,16 @@
   --destructive-foreground: #0f1422;
 
   /* Le gris ardoise du thème clair manque de contraste sur fond sombre. */
-  --status-todo: #a3aec2;
   --priority-low: #a3aec2;
+
+  /* Texte coloré : variantes claires, contrastées sur les cartes sombres. */
+  --status-todo-text: #a5b4fc;
+  --status-progress-text: #7dd3fc;
+  --status-review-text: #f9a8d4;
+  --status-done-text: #86efac;
+  --priority-low-text: #cbd5e1;
+  --priority-medium-text: #fcd34d;
+  --priority-high-text: #fca5a5;
 }
 
 @theme inline {
@@ -111,10 +131,17 @@
   --color-status-progress: var(--status-progress);
   --color-status-review: var(--status-review);
   --color-status-done: var(--status-done);
+  --color-status-todo-text: var(--status-todo-text);
+  --color-status-progress-text: var(--status-progress-text);
+  --color-status-review-text: var(--status-review-text);
+  --color-status-done-text: var(--status-done-text);
 
   --color-priority-low: var(--priority-low);
   --color-priority-medium: var(--priority-medium);
   --color-priority-high: var(--priority-high);
+  --color-priority-low-text: var(--priority-low-text);
+  --color-priority-medium-text: var(--priority-medium-text);
+  --color-priority-high-text: var(--priority-high-text);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
