@@ -9,6 +9,7 @@
  * Aucune couleur littérale ne doit apparaître ailleurs : scripts/brain-check.sh le vérifie.
  */
 :root {
+  color-scheme: light;
   --radius: 0.625rem;
 
   /* Surfaces et texte */
@@ -53,11 +54,11 @@
 }
 
 /*
- * Jeu sombre défini dès maintenant pour que le bonus B-02 ne coûte qu'une bascule de
- * classe. Volontairement non activé : aucun sélecteur ne pose .dark tant que B-02 n'est
- * pas lancé (INV-01).
+ * Jeu sombre (bonus B-02) : la classe .dark est posée sur <html> par le script d'index.html
+ * puis par ThemeProvider. `color-scheme` aligne les contrôles natifs (date, défilement).
  */
 .dark {
+  color-scheme: dark;
   --background: #0f1422;
   --foreground: #e8ecf4;
   --card: #171d2e;
@@ -77,6 +78,10 @@
   --ring: #6b87ff;
   --destructive: #f87171;
   --destructive-foreground: #0f1422;
+
+  /* Le gris ardoise du thème clair manque de contraste sur fond sombre. */
+  --status-todo: #a3aec2;
+  --priority-low: #a3aec2;
 }
 
 @theme inline {

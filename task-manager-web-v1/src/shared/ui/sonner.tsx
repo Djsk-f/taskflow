@@ -6,6 +6,7 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react'
 import type { CSSProperties } from 'react'
+import { useTheme } from '@/shared/theme/useTheme'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
 /*
@@ -15,7 +16,7 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner'
  * telle quelle le jour où B-02 sera lancé.
  */
 const Toaster = (props: ToasterProps) => (
-  <Sonner
+  <ThemedSonner
     className="toaster group"
     position="top-right"
     icons={{
@@ -36,5 +37,11 @@ const Toaster = (props: ToasterProps) => (
     {...props}
   />
 )
+
+/** Les notifications suivent le thème de l'application (bonus B-02). */
+function ThemedSonner(props: ToasterProps) {
+  const { theme } = useTheme()
+  return <Sonner theme={theme} {...props} />
+}
 
 export { Toaster }

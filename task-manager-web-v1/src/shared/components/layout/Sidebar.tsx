@@ -1,4 +1,6 @@
 import { cn } from '@/shared/lib/utils'
+import { useTheme } from '@/shared/theme/useTheme'
+import { Switch } from '@/shared/ui/switch'
 import { CircleCheckBigIcon, MoonIcon, SettingsIcon, SquareCheckBigIcon, type LucideIcon } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
@@ -34,16 +36,25 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {FOOTER.map((item) => (
           <SidebarLink key={item.to} item={item} onNavigate={onNavigate} />
         ))}
-        <span
-          className="text-muted-foreground flex min-h-10 cursor-not-allowed items-center gap-3 px-3 text-sm opacity-50"
-          aria-disabled="true"
-        >
-          <MoonIcon className="size-4" />
-          Mode sombre
-          <span className="ml-auto text-xs">bientôt</span>
-        </span>
+        <DarkModeToggle />
       </div>
     </div>
+  )
+}
+
+/** Bascule du mode sombre, en pied de sidebar comme sur la capture. */
+function DarkModeToggle() {
+  const { theme, setTheme } = useTheme()
+  return (
+    <label className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors">
+      <MoonIcon className="size-4" />
+      Mode sombre
+      <Switch
+        className="ml-auto"
+        checked={theme === 'dark'}
+        onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+      />
+    </label>
   )
 }
 
