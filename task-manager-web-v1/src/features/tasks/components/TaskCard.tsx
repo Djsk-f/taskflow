@@ -26,6 +26,10 @@ export function TaskCard({ task, ...actions }: TaskCardProps) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      // dnd-kit pose role="button" ; or la carte contient des boutons (titre, menu), et un
+      // bouton ne doit pas en contenir d'autres. « group » garde focus, description et
+      // instructions clavier du glisser-déposer.
+      role="group"
       aria-roledescription={t('tasks.kanban.draggable')}
       aria-label={task.title}
       className={cn(

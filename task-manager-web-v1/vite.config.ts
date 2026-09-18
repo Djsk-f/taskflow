@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
@@ -16,5 +17,13 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+  },
+  // Tests unitaires et de composants (Vitest). Les tests de bout en bout sont dans e2e/.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    // Valeur fixe : les tests ne dépendent d'aucun fichier .env (intégration continue).
+    env: { VITE_API_BASE_URL: '/api/v1' },
   },
 })
