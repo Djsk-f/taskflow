@@ -1,0 +1,43 @@
+# Secrets
+.env
+.env.local
+*.pem
+
+# Java / Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.log
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Divers
+*.sql.gz
+coverage/
+
+# Atelier local de développement — NON LIVRÉ au recruteur (ADR-010)
+.brain/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.kilocode/
+.github/copilot-instructions.md
+scripts/brain-check.sh
+scripts/sync-entrypoints.sh
+
+# Référence visuelle de travail (branding tiers) — non livrée
+design/
+scripts/dev-env.sh
+scripts/api.sh
