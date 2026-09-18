@@ -1,0 +1,51 @@
+package com.taskflow.api.user;
+
+import com.taskflow.api.common.model.Auditable;
+import com.taskflow.api.common.util.Emails;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class User extends Auditable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "full_name", nullable = false, length = 120)
+    private String fullName;
+
+    @Column(nullable = false, unique = true, length = 180)
+    private String email;
+
+    /** Hash BCrypt. Jamais exposé par un DTO, jamais journalisé. */
+    @Column(nullable = false, length = 100)
+    private String password;
+
+    /**
+     * Dernier rempart de normalisation : même si un appelant oublie Emails.normalize,
+     * aucun email non normalisé ne peut atteindre la contrainte d'unicité SQL.
+     */
+    @PrePersist
+    @PreUpdate
+    private void normalizeEmail() {
+        email = Emails.normalize(email);
+    }
+}
