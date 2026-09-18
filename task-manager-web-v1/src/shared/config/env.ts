@@ -10,10 +10,24 @@ import { z } from 'zod'
  * navigateur, les identifiants de base de données ne peuvent donc pas fuir dans le bundle.
  */
 const environmentSchema = z.object({
-  VITE_API_BASE_URL: z.string().url({
+  // URL absolue en développement (http://localhost:8080/api/v1), chemin relatif derrière
+  // le proxy nginx de l'image Docker (/api/v1).
+  VITE_API_BASE_URL: z.string().refine(isAbsoluteUrlOrPath, {
     message:
       "VITE_API_BASE_URL est absente ou invalide. Copier .env.example en .env à la racine du dépôt (ex. http://localhost:8080/api/v1).",
   }),
 })
+
+function isAbsoluteUrlOrPath(value: string): boolean {
+  if (value.startsWith('/')) {
+    return true
+  }
+  try {
+    new URL(value)
+    return true
+  } catch {
+    return false
+  }
+}
 
 export const env = environmentSchema.parse(import.meta.env)
