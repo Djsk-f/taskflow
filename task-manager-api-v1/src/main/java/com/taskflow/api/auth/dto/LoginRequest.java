@@ -3,9 +3,9 @@ package com.taskflow.api.auth.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginRequest(
-        @NotBlank(message = "L'email est obligatoire.")
+        @NotBlank(message = "{validation.email.required}")
         String email,
 
-        @NotBlank(message = "Le mot de passe est obligatoire.")
+        @NotBlank(message = "{validation.password.required}")
         String password) {
 }

@@ -52,7 +52,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.register(
                 new RegisterRequest("Fidèle", "Fidele@Example.COM", "Secret123")))
                 .isInstanceOf(ConflictException.class)
-                .hasMessage("Cet email est déjà utilisé.");
+                .extracting("messageKey").isEqualTo("error.email.used");
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -81,6 +81,6 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("fidele@example.com", "faux")))
                 .isInstanceOf(InvalidCredentialsException.class)
-                .hasMessage("Email ou mot de passe incorrect.");
+                .extracting("messageKey").isEqualTo("error.credentials.invalid");
     }
 }

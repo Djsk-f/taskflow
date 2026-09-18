@@ -152,6 +152,36 @@ class TaskApiSecurityTest {
     }
 
     @Test
+    @DisplayName("les messages d'erreur suivent Accept-Language : anglais sur demande, français par défaut")
+    void errorMessagesFollowAcceptLanguage() throws Exception {
+        String bearerAlice = "Bearer " + tokenAlice;
+        String blankTitle = "{\"title\":\"   \"}";
+
+        mockMvc.perform(post("/api/v1/tasks").header(HttpHeaders.AUTHORIZATION, bearerAlice)
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, "en-US,en;q=0.9")
+                        .contentType(MediaType.APPLICATION_JSON).content(blankTitle))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("The request contains invalid fields."))
+                .andExpect(jsonPath("$.fieldErrors[0].message").value("Title is required."));
+        mockMvc.perform(post("/api/v1/tasks").header(HttpHeaders.AUTHORIZATION, bearerAlice)
+                        .contentType(MediaType.APPLICATION_JSON).content(blankTitle))
+                .andExpect(jsonPath("$.fieldErrors[0].message").value("Le titre est obligatoire."));
+
+        // 401 : produit par la chaîne de sécurité, hors Spring MVC
+        mockMvc.perform(get("/api/v1/tasks").header(HttpHeaders.ACCEPT_LANGUAGE, "en"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Authentication required: missing, expired or invalid token."));
+        mockMvc.perform(get("/api/v1/tasks"))
+                .andExpect(jsonPath("$.message").value("Authentification requise : jeton absent, expiré ou invalide."));
+
+        // Erreur métier avec paramètres (MessageFormat)
+        mockMvc.perform(get("/api/v1/tasks?sort=password").header(HttpHeaders.AUTHORIZATION, bearerAlice)
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, "en"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.startsWith("Cannot sort by \"password\".")));
+    }
+
+    @Test
     @DisplayName("les erreurs conservent leur statut et le format unique de l'API")
     void errorsKeepTheirStatusAndFormat() throws Exception {
         String bearerAlice = "Bearer " + tokenAlice;

@@ -34,7 +34,7 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         String email = Emails.normalize(request.email());
         if (userRepository.existsByEmail(email)) {
-            throw new ConflictException(ErrorCode.EMAIL_ALREADY_USED, "Cet email est déjà utilisé.");
+            throw new ConflictException(ErrorCode.EMAIL_ALREADY_USED, "error.email.used");
         }
         User user = userRepository.save(User.builder()
                 .fullName(request.fullName().trim())

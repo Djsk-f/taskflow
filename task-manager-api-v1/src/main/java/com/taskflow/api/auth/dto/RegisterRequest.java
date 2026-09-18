@@ -5,17 +5,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
-        @NotBlank(message = "Le nom est obligatoire.")
-        @Size(min = 2, max = 120, message = "Le nom doit contenir entre 2 et 120 caractères.")
+        @NotBlank(message = "{validation.fullName.required}")
+        @Size(min = 2, max = 120, message = "{validation.fullName.size}")
         String fullName,
 
-        @NotBlank(message = "L'email est obligatoire.")
-        @Email(message = "Format d'email invalide.")
-        @Size(max = 180, message = "L'email ne peut pas dépasser 180 caractères.")
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.format}")
+        @Size(max = 180, message = "{validation.email.size}")
         String email,
 
         // 72 octets est la limite au-delà de laquelle BCrypt tronque silencieusement.
-        @NotBlank(message = "Le mot de passe est obligatoire.")
-        @Size(min = 8, max = 72, message = "Le mot de passe doit contenir entre 8 et 72 caractères.")
+        @NotBlank(message = "{validation.password.required}")
+        @Size(min = 8, max = 72, message = "{validation.password.size}")
         String password) {
 }

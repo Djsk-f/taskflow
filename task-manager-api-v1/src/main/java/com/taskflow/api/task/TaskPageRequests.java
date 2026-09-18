@@ -23,10 +23,10 @@ public final class TaskPageRequests {
 
     public static Pageable of(int page, int size, String sort) {
         if (page < 0) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "Le numéro de page ne peut pas être négatif.");
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "error.page.negative");
         }
         if (size < 1) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "La taille de page doit être au moins 1.");
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "error.page.size");
         }
         return PageRequest.of(page, Math.min(size, MAX_SIZE), parseSort(sort));
     }
@@ -38,9 +38,8 @@ public final class TaskPageRequests {
         String[] parts = sort.split(",");
         String field = parts[0].trim();
         if (!SORTABLE_FIELDS.contains(field)) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR,
-                    "Tri impossible sur « %s ». Champs autorisés : %s."
-                            .formatted(field, String.join(", ", SORTABLE_FIELDS)));
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "error.sort.invalid",
+                    field, String.join(", ", SORTABLE_FIELDS));
         }
         Sort.Direction direction = parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim())
                 ? Sort.Direction.ASC

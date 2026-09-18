@@ -59,7 +59,7 @@ class TaskServiceTest {
 
         assertThatThrownBy(() -> taskService.findById(TASK_ID, INTRUDER_ID))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Tâche introuvable.");
+                .extracting("messageKey").isEqualTo("error.task.notFound");
     }
 
     @Test

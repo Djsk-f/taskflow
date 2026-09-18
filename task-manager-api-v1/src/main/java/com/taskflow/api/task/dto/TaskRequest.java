@@ -12,11 +12,11 @@ import java.time.Instant;
  * défaut dans TaskMapper, seul endroit où ces défauts sont définis.
  */
 public record TaskRequest(
-        @NotBlank(message = "Le titre est obligatoire.")
-        @Size(max = 150, message = "Le titre ne peut pas dépasser 150 caractères.")
+        @NotBlank(message = "{validation.title.required}")
+        @Size(max = 150, message = "{validation.title.size}")
         String title,
 
-        @Size(max = 2000, message = "La description ne peut pas dépasser 2000 caractères.")
+        @Size(max = 2000, message = "{validation.description.size}")
         String description,
 
         TaskStatus status,

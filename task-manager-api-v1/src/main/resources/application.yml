@@ -28,6 +28,13 @@ spring:
     locations: classpath:db/migration
   jackson:
     default-property-inclusion: non_null
+  # Messages renvoyés au client en français (défaut) ou en anglais selon Accept-Language.
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
+  web:
+    locale: fr
+    locale-resolver: accept-header
 
 server:
   port: ${SERVER_PORT:8080}

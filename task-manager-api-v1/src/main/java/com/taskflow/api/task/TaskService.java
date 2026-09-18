@@ -81,6 +81,6 @@ public class TaskService {
      * non 403, pour ne rien révéler de l'existence des données d'un autre (INV-08).
      */
     private static ResourceNotFoundException taskNotFound() {
-        return new ResourceNotFoundException("Tâche introuvable.");
+        return new ResourceNotFoundException("error.task.notFound");
     }
 }

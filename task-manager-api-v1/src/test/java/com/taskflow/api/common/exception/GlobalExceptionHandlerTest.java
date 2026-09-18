@@ -2,8 +2,13 @@ package com.taskflow.api.common.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.taskflow.api.common.i18n.Messages;
+import java.util.Locale;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -15,7 +20,21 @@ import org.springframework.mock.web.MockHttpServletRequest;
  */
 class GlobalExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler(new Messages(messageSource()));
+
+    /** Les vrais fichiers messages*.properties, configurés comme dans application.yml. */
+    private static ResourceBundleMessageSource messageSource() {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasename("messages");
+        source.setDefaultEncoding("UTF-8");
+        source.setFallbackToSystemLocale(false);
+        return source;
+    }
+
+    @AfterEach
+    void resetLocale() {
+        LocaleContextHolder.resetLocaleContext();
+    }
 
     @Test
     @DisplayName("une exception inattendue devient un 500 neutre, sans détail technique")
@@ -23,6 +42,7 @@ class GlobalExceptionHandlerTest {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/tasks");
         RuntimeException cause = new IllegalStateException("connexion JDBC perdue : jdbc:mysql://prod:3306 user=root");
 
+        LocaleContextHolder.setLocale(Locale.FRENCH);
         ResponseEntity<ApiErrorResponse> response = handler.handleUnexpected(cause, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -43,12 +63,26 @@ class GlobalExceptionHandlerTest {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/tasks/9");
 
         ResponseEntity<ApiErrorResponse> response =
-                handler.handleApiException(new ResourceNotFoundException("Tâche introuvable."), request);
+                handler.handleApiException(new ResourceNotFoundException("error.task.notFound"), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().code()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(response.getBody().status()).isEqualTo(404);
+    }
+
+    @Test
+    @DisplayName("le message suit la langue de la requête ; langue inconnue → français")
+    void messageFollowsRequestLanguage() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/tasks/9");
+        ResourceNotFoundException notFound = new ResourceNotFoundException("error.task.notFound");
+
+        LocaleContextHolder.setLocale(Locale.ENGLISH);
+        assertThat(handler.handleApiException(notFound, request).getBody().message()).isEqualTo("Task not found.");
+        LocaleContextHolder.setLocale(Locale.FRENCH);
+        assertThat(handler.handleApiException(notFound, request).getBody().message()).isEqualTo("Tâche introuvable.");
+        LocaleContextHolder.setLocale(Locale.GERMAN);
+        assertThat(handler.handleApiException(notFound, request).getBody().message()).isEqualTo("Tâche introuvable.");
     }
 
     @Test

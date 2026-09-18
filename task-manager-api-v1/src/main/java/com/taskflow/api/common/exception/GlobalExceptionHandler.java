@@ -1,11 +1,13 @@
 package com.taskflow.api.common.exception;
 
+import com.taskflow.api.common.i18n.Messages;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,18 +31,25 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * inconnue) avec des statuts déjà corrects. En héritant, on conserve ces statuts et on ne
  * réécrit que le corps ; un simple @ExceptionHandler(Exception.class) les aurait toutes
  * transformées en 500.
+ *
+ * <p>Les messages sont résolus dans la langue de la requête (Accept-Language) par
+ * {@link Messages} : les exceptions ne portent que des clés.
  */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private final Messages messages;
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiErrorResponse> handleApiException(ApiException exception,
                                                               HttpServletRequest request) {
-        log.warn("{} sur {} : {}", exception.getCode(), request.getRequestURI(), exception.getMessage());
+        log.warn("{} sur {} : {}", exception.getCode(), request.getRequestURI(), exception.getMessageKey());
+        String message = messages.get(exception.getMessageKey(), exception.getArgs());
         return ResponseEntity
                 .status(exception.getCode().getStatus())
-                .body(ApiErrorResponse.of(exception.getCode(), exception.getMessage(), request.getRequestURI()));
+                .body(ApiErrorResponse.of(exception.getCode(), message, request.getRequestURI()));
     }
 
     /**
@@ -51,10 +60,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception,
                                                                HttpServletRequest request) {
-        String message = "Valeur invalide pour « %s » : %s.%s".formatted(
-                exception.getName(),
-                exception.getValue(),
-                allowedValues(exception).map(values -> " Valeurs autorisées : " + values + ".").orElse(""));
+        String message = allowedValues(exception)
+                .map(values -> messages.get("error.param.allowed", exception.getName(), exception.getValue(), values))
+                .orElseGet(() -> messages.get("error.param.invalid", exception.getName(), exception.getValue()));
         return ResponseEntity
                 .status(ErrorCode.VALIDATION_ERROR.getStatus())
                 .body(ApiErrorResponse.withFieldErrors(ErrorCode.VALIDATION_ERROR, message, request.getRequestURI(),
@@ -70,8 +78,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_ERROR.getStatus())
                 .body(ApiErrorResponse.of(ErrorCode.INTERNAL_ERROR,
-                        "Une erreur interne est survenue. Merci de réessayer plus tard.",
-                        request.getRequestURI()));
+                        messages.get(messageKeyFor(ErrorCode.INTERNAL_ERROR)), request.getRequestURI()));
     }
 
     /** Erreurs de validation des corps de requête : un message par champ fautif. */
@@ -87,7 +94,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity
                 .status(ErrorCode.VALIDATION_ERROR.getStatus())
                 .body(ApiErrorResponse.withFieldErrors(ErrorCode.VALIDATION_ERROR,
-                        "La requête contient des champs invalides.", path(request), fieldErrors));
+                        messages.get("error.validation"), path(request), fieldErrors));
     }
 
     /**
@@ -104,7 +111,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("{} sur {} : {}", statusCode, path(request), exception.getMessage());
         return ResponseEntity
                 .status(statusCode)
-                .body(ApiErrorResponse.withStatus(statusCode.value(), code, messageFor(code), path(request)));
+                .body(ApiErrorResponse.withStatus(statusCode.value(), code, messages.get(messageKeyFor(code)),
+                        path(request)));
     }
 
     private static ErrorCode codeFor(HttpStatusCode status) {
@@ -119,16 +127,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         };
     }
 
-    private static String messageFor(ErrorCode code) {
-        return switch (code) {
-            case VALIDATION_ERROR -> "Requête invalide : vérifier le corps, les paramètres et leur format.";
-            case UNAUTHORIZED -> "Authentification requise : jeton absent, expiré ou invalide.";
-            case FORBIDDEN -> "Accès refusé.";
-            case RESOURCE_NOT_FOUND -> "Ressource introuvable.";
-            case METHOD_NOT_ALLOWED -> "Méthode HTTP non autorisée sur cette ressource.";
-            case UNSUPPORTED_MEDIA_TYPE -> "Type de contenu non supporté : utiliser application/json.";
-            default -> "Une erreur interne est survenue. Merci de réessayer plus tard.";
-        };
+    /** Message générique d'un code d'erreur, partagé avec la chaîne de sécurité. */
+    public static String messageKeyFor(ErrorCode code) {
+        return "error.code." + code.name();
     }
 
     private static String path(WebRequest request) {

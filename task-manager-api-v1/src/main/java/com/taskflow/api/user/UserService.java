@@ -36,7 +36,7 @@ public class UserService {
         if (request.email() != null) {
             String email = Emails.normalize(request.email());
             if (userRepository.existsByEmailAndIdNot(email, userId)) {
-                throw new ConflictException(ErrorCode.EMAIL_ALREADY_USED, "Cet email est déjà utilisé.");
+                throw new ConflictException(ErrorCode.EMAIL_ALREADY_USED, "error.email.used");
             }
             user.setEmail(email);
         }
@@ -47,7 +47,7 @@ public class UserService {
     public void changePassword(Long userId, ChangePasswordRequest request) {
         User user = requireUser(userId);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new InvalidCredentialsException("Le mot de passe actuel est incorrect.");
+            throw new InvalidCredentialsException("error.password.current.invalid");
         }
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         log.info("Mot de passe modifié : id={}", userId);
@@ -56,6 +56,6 @@ public class UserService {
     /** Un seul chemin de résolution de l'utilisateur courant pour les trois opérations. */
     private User requireUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
+                .orElseThrow(() -> new ResourceNotFoundException("error.user.notFound"));
     }
 }

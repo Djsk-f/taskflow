@@ -19,7 +19,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException exception) throws IOException {
-        responder.write(request, response, ErrorCode.UNAUTHORIZED,
-                "Authentification requise : jeton absent, expiré ou invalide.");
+        responder.write(request, response, ErrorCode.UNAUTHORIZED);
     }
 }

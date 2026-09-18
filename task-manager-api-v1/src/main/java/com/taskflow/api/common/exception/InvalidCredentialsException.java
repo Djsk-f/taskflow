@@ -7,10 +7,10 @@ public class InvalidCredentialsException extends ApiException {
      * passe qui est faux (pas d'énumération de comptes, cf. EX-02).
      */
     public InvalidCredentialsException() {
-        super(ErrorCode.INVALID_CREDENTIALS, "Email ou mot de passe incorrect.");
+        super(ErrorCode.INVALID_CREDENTIALS, "error.credentials.invalid");
     }
 
-    public InvalidCredentialsException(String message) {
-        super(ErrorCode.INVALID_CREDENTIALS, message);
+    public InvalidCredentialsException(String messageKey) {
+        super(ErrorCode.INVALID_CREDENTIALS, messageKey);
     }
 }

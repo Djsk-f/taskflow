@@ -5,6 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 /** Changement de statut seul : c'est l'action du glisser-déposer du tableau Kanban. */
 public record TaskStatusRequest(
-        @NotNull(message = "Le statut est obligatoire.")
+        @NotNull(message = "{validation.status.required}")
         TaskStatus status) {
 }
