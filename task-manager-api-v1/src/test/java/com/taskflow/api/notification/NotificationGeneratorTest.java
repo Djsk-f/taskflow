@@ -6,10 +6,14 @@ import com.taskflow.api.task.Task;
 import com.taskflow.api.task.TaskPriority;
 import com.taskflow.api.task.TaskRepository;
 import com.taskflow.api.task.TaskStatus;
+import com.taskflow.api.timeentry.TimeEntry;
+import com.taskflow.api.timeentry.TimeEntryRepository;
 import com.taskflow.api.user.User;
 import com.taskflow.api.user.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,10 +31,19 @@ import org.springframework.test.context.ActiveProfiles;
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({NotificationGenerator.class, NotificationService.class})
+@Import({NotificationGenerator.class, NotificationService.class, NotificationGeneratorTest.Settings.class})
 class NotificationGeneratorTest {
 
+    /** Vendredi 18 septembre 2026, 12 h à Paris. */
     private static final Instant NOW = Instant.parse("2026-09-18T10:00:00Z");
+
+    @TestConfiguration
+    static class Settings {
+        @Bean
+        NotificationProperties notificationProperties() {
+            return new NotificationProperties(ZoneId.of("Europe/Paris"), 17);
+        }
+    }
 
     @Autowired
     private NotificationGenerator generator;
@@ -45,12 +60,16 @@ class NotificationGeneratorTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private TimeEntryRepository timeEntryRepository;
+
     private User alice;
     private User bob;
 
     @BeforeEach
     void setUp() {
         notificationRepository.deleteAll();
+        timeEntryRepository.deleteAll();
         taskRepository.deleteAll();
         userRepository.deleteAll();
         alice = userRepository.save(User.builder().fullName("Alice").email("alice@test.local").password("hash").build());
@@ -139,6 +158,62 @@ class NotificationGeneratorTest {
         assertThat(notificationService.unreadCount(alice.getId())).isZero();
         assertThat(notificationRepository.findByUserId(alice.getId(), PageRequest.of(0, 10)))
                 .allSatisfy(n -> assertThat(n.getReadAt()).isNotNull());
+    }
+
+    @Test
+    @DisplayName("préférences : un rappel automatique coupé n'est pas créé")
+    void preferencesFilterAutomaticReminders() {
+        alice.getNotificationPreferences().setDueIn24h(false);
+        userRepository.save(alice);
+        task(alice, "Dans 5 h", TaskStatus.TODO, NOW.plus(Duration.ofHours(5)));
+        task(alice, "En retard", TaskStatus.TODO, NOW.minus(Duration.ofHours(5)));
+
+        generator.generate(NOW);
+
+        assertThat(notificationRepository.findAll()).extracting(Notification::getType)
+                .containsExactly(NotificationType.OVERDUE);
+    }
+
+    @Test
+    @DisplayName("rappel choisi : déclenché à son heure, une fois ; déplacé, l'ancien disparaît")
+    void chosenReminderFiresOnceAndFollowsChanges() {
+        Task task = task(alice, "Appeler le plombier", TaskStatus.TODO, null);
+        task.setReminderAt(NOW.plus(Duration.ofMinutes(10)));
+        taskRepository.save(task);
+
+        assertThat(generator.generate(NOW)).as("pas encore l'heure").isZero();
+        assertThat(generator.generate(NOW.plus(Duration.ofMinutes(10)))).isEqualTo(1);
+        assertThat(generator.generate(NOW.plus(Duration.ofMinutes(11)))).isZero();
+        assertThat(notificationRepository.findAll()).extracting(Notification::getType)
+                .containsExactly(NotificationType.REMINDER);
+
+        task.setReminderAt(NOW.plus(Duration.ofDays(2)).truncatedTo(ChronoUnit.SECONDS));
+        notificationService.discardObsolete(taskRepository.saveAndFlush(task));
+        assertThat(notificationRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("saisie du temps : jour ouvré après 17 h, seulement si activé et si rien n'est saisi")
+    void missingTimeReminder() {
+        alice.getNotificationPreferences().setDailyTimeReminder(true);
+        bob.getNotificationPreferences().setDailyTimeReminder(true);
+        userRepository.save(alice);
+        userRepository.save(bob);
+        Task bobTask = task(bob, "Tâche de Bob", TaskStatus.IN_PROGRESS, null);
+        timeEntryRepository.save(TimeEntry.builder().user(bob).task(bobTask)
+                .workDate(LocalDate.of(2026, 9, 18)).durationMinutes(60).build());
+
+        Instant fridayNoon = NOW;
+        Instant fridayEvening = Instant.parse("2026-09-18T16:00:00Z");
+        Instant saturdayEvening = Instant.parse("2026-09-19T16:00:00Z");
+
+        assertThat(generator.generate(fridayNoon)).as("avant 17 h").isZero();
+        assertThat(generator.generate(fridayEvening)).as("Alice seule : Bob a saisi du temps").isEqualTo(1);
+        assertThat(generator.generate(fridayEvening.plus(Duration.ofHours(1)))).as("une fois par jour").isZero();
+        assertThat(generator.generate(saturdayEvening)).as("pas le week-end").isZero();
+        assertThat(notificationService.list(alice.getId(), 0, 10).content())
+                .extracting("type", "taskId")
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(NotificationType.NO_TIME_LOGGED, null));
     }
 
     private Task task(User owner, String title, TaskStatus status, Instant dueDate) {

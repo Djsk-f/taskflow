@@ -53,6 +53,9 @@ app:
   notifications:
     enabled: ${APP_NOTIFICATIONS_ENABLED:true}
     scan-interval-ms: ${APP_NOTIFICATIONS_SCAN_INTERVAL_MS:30000}
+    # Rappel de saisie du temps (jours ouvrés, si activé dans le profil) : heure locale.
+    zone: ${APP_TIMEZONE:Europe/Paris}
+    daily-time-hour: 17
   demo-data:
     enabled: ${APP_DEMO_DATA:false}
     # Identifiants publics de la démo (documentés dans le README), pas un secret.

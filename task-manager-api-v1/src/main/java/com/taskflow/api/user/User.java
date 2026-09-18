@@ -2,7 +2,9 @@ package com.taskflow.api.user;
 
 import com.taskflow.api.common.model.Auditable;
 import com.taskflow.api.common.util.Emails;
+import com.taskflow.api.notification.NotificationPreferences;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,6 +40,10 @@ public class User extends Auditable {
     /** Hash BCrypt. Jamais exposé par un DTO, jamais journalisé. */
     @Column(nullable = false, length = 100)
     private String password;
+
+    @Embedded
+    @Builder.Default
+    private NotificationPreferences notificationPreferences = new NotificationPreferences();
 
     /**
      * Dernier rempart de normalisation : même si un appelant oublie Emails.normalize,

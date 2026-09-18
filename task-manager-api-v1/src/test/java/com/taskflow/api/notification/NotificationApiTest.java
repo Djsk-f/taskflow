@@ -92,6 +92,30 @@ class NotificationApiTest {
                 .andExpect(jsonPath("$.totalElements").value(0));
     }
 
+    @Test
+    @DisplayName("préférences : défauts, modification, et corps incomplet refusé")
+    void preferencesCanBeReadAndChanged() throws Exception {
+        String dave = bearer(register("dave.notif@test.local"));
+        mockMvc.perform(get("/api/v1/users/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, dave))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dueIn24h").value(true))
+                .andExpect(jsonPath("$.dailyTimeReminder").value(false));
+
+        mockMvc.perform(put("/api/v1/users/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, dave)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dueIn24h\":false,\"dueIn1h\":true,\"overdue\":true,\"dailyTimeReminder\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dueIn24h").value(false))
+                .andExpect(jsonPath("$.dailyTimeReminder").value(true));
+
+        mockMvc.perform(put("/api/v1/users/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, dave)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"dueIn24h\":true}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        mockMvc.perform(get("/api/v1/users/me/notification-preferences"))
+                .andExpect(status().isUnauthorized());
+    }
+
     private long createTask(String bearer, String title, Instant dueDate) throws Exception {
         String body = mockMvc.perform(post("/api/v1/tasks").header(HttpHeaders.AUTHORIZATION, bearer)
                         .contentType(MediaType.APPLICATION_JSON)

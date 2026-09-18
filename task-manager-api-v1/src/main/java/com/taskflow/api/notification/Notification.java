@@ -72,4 +72,9 @@ public class Notification {
     static String dedupKey(NotificationType type, Long taskId, Instant subjectAt) {
         return type + ":" + taskId + ":" + subjectAt.getEpochSecond();
     }
+
+    /** Événement sans tâche (rappel de saisie du temps) : unique par utilisateur et par jour. */
+    static String userDedupKey(NotificationType type, Long userId, Instant subjectAt) {
+        return type + ":u" + userId + ":" + subjectAt.getEpochSecond();
+    }
 }

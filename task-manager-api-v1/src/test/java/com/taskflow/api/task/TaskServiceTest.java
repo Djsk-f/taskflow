@@ -46,7 +46,7 @@ class TaskServiceTest {
         when(userRepository.getReferenceById(OWNER_ID)).thenReturn(User.builder().id(OWNER_ID).build());
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        taskService.create(OWNER_ID, new TaskRequest("  Nouvelle tâche  ", null, null, null, null));
+        taskService.create(OWNER_ID, new TaskRequest("  Nouvelle tâche  ", null, null, null, null, null));
 
         ArgumentCaptor<Task> saved = ArgumentCaptor.forClass(Task.class);
         verify(taskRepository).save(saved.capture());
@@ -72,7 +72,7 @@ class TaskServiceTest {
         when(taskRepository.findByIdAndUserId(TASK_ID, INTRUDER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> taskService.update(TASK_ID, INTRUDER_ID,
-                new TaskRequest("Piraté", null, null, null, null)))
+                new TaskRequest("Piraté", null, null, null, null, null)))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(taskRepository, never()).saveAndFlush(any(Task.class));
     }

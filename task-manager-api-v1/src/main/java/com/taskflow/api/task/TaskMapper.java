@@ -30,6 +30,7 @@ public final class TaskMapper {
         task.setStatus(request.status() != null ? request.status() : DEFAULT_STATUS);
         task.setPriority(request.priority() != null ? request.priority() : DEFAULT_PRIORITY);
         task.setDueDate(request.dueDate());
+        task.setReminderAt(request.reminderAt());
     }
 
     public static TaskResponse toResponse(Task task) {
@@ -40,6 +41,7 @@ public final class TaskMapper {
                 task.getStatus(),
                 task.getPriority(),
                 task.getDueDate(),
+                task.getReminderAt(),
                 task.getCreatedAt(),
                 task.getUpdatedAt(),
                 task.getTimeSpentMinutes() == null ? 0 : task.getTimeSpentMinutes());

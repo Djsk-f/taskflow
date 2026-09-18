@@ -23,5 +23,7 @@ public record TaskRequest(
 
         TaskPriority priority,
 
-        Instant dueDate) {
+        Instant dueDate,
+
+        Instant reminderAt) {
 }

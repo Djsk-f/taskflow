@@ -2,8 +2,11 @@ package com.taskflow.api.notification;
 
 import com.taskflow.api.task.Task;
 import com.taskflow.api.task.TaskStatus;
+import com.taskflow.api.user.User;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -18,10 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
  * disjointes, pour qu'une tâche due dans 30 min ne reçoive pas à la fois « sous 24 h »
  * et « sous 1 h » :
  * <pre>
- *   OVERDUE      ]maintenant − 7 j, maintenant]
- *   DUE_IN_1H    ]maintenant, maintenant + 1 h]
- *   DUE_IN_24H   ]maintenant + 1 h, maintenant + 24 h]
+ *   OVERDUE         échéance dans ]maintenant − 7 j, maintenant]
+ *   DUE_IN_1H       échéance dans ]maintenant, maintenant + 1 h]
+ *   DUE_IN_24H      échéance dans ]maintenant + 1 h, maintenant + 24 h]
+ *   REMINDER        rappel choisi dans ]maintenant − 7 j, maintenant]
+ *   NO_TIME_LOGGED  jour ouvré, après l'heure réglée, aucun temps saisi ce jour
  * </pre>
+ * Les rappels automatiques suivent les préférences du propriétaire de la tâche.
  */
 @Slf4j
 @Service
@@ -34,6 +40,7 @@ public class NotificationGenerator {
     static final Duration OVERDUE_LOOKBACK = Duration.ofDays(7);
 
     private final NotificationRepository notificationRepository;
+    private final NotificationProperties properties;
 
     @Transactional
     public int generate(Instant now) {
@@ -41,13 +48,40 @@ public class NotificationGenerator {
         collectDue(candidates, NotificationType.OVERDUE, now.minus(OVERDUE_LOOKBACK), now, now);
         collectDue(candidates, NotificationType.DUE_IN_1H, now, now.plus(HOUR), now);
         collectDue(candidates, NotificationType.DUE_IN_24H, now.plus(HOUR), now.plus(DAY), now);
+        for (Task task : notificationRepository.findOpenTasksRemindedBetween(
+                TaskStatus.DONE, now.minus(OVERDUE_LOOKBACK), now)) {
+            candidates.add(forTask(task, NotificationType.REMINDER, task.getReminderAt(), now));
+        }
+        collectMissingTime(candidates, now);
         return saveNew(candidates);
     }
 
     private void collectDue(List<Notification> candidates, NotificationType type, Instant from, Instant to,
                             Instant now) {
         for (Task task : notificationRepository.findOpenTasksDueBetween(TaskStatus.DONE, from, to)) {
-            candidates.add(forTask(task, type, task.getDueDate(), now));
+            if (task.getUser().getNotificationPreferences().allows(type)) {
+                candidates.add(forTask(task, type, task.getDueDate(), now));
+            }
+        }
+    }
+
+    /** Fin de journée ouvrée sans aucun temps saisi : un rappel, une fois par jour. */
+    private void collectMissingTime(List<Notification> candidates, Instant now) {
+        ZonedDateTime local = now.atZone(properties.zone());
+        boolean weekend = local.getDayOfWeek() == DayOfWeek.SATURDAY || local.getDayOfWeek() == DayOfWeek.SUNDAY;
+        if (weekend || local.getHour() < properties.dailyTimeHour()) {
+            return;
+        }
+        Instant subjectAt = local.toLocalDate().atTime(properties.dailyTimeHour(), 0)
+                .atZone(properties.zone()).toInstant();
+        for (User user : notificationRepository.findUsersWithoutTimeOn(local.toLocalDate())) {
+            candidates.add(Notification.builder()
+                    .user(user)
+                    .type(NotificationType.NO_TIME_LOGGED)
+                    .subjectAt(subjectAt)
+                    .dedupKey(Notification.userDedupKey(NotificationType.NO_TIME_LOGGED, user.getId(), subjectAt))
+                    .createdAt(now)
+                    .build());
         }
     }
 

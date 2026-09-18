@@ -2,7 +2,9 @@ package com.taskflow.api.notification;
 
 import com.taskflow.api.task.Task;
 import com.taskflow.api.task.TaskStatus;
+import com.taskflow.api.user.User;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -34,10 +36,23 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("update Notification n set n.readAt = :now where n.user.id = :userId and n.readAt is null")
     int markAllRead(@Param("userId") Long userId, @Param("now") Instant now);
 
-    /** Tâches non terminées dont l'échéance tombe dans ]from, to], tous utilisateurs confondus. */
-    @Query("select t from Task t where t.status <> :done and t.dueDate > :from and t.dueDate <= :to")
+    /**
+     * Tâches non terminées dont l'échéance tombe dans ]from, to], tous utilisateurs
+     * confondus. Le propriétaire est chargé avec (ses préférences filtrent les rappels).
+     */
+    @Query("select t from Task t join fetch t.user where t.status <> :done and t.dueDate > :from and t.dueDate <= :to")
     List<Task> findOpenTasksDueBetween(@Param("done") TaskStatus done, @Param("from") Instant from,
                                        @Param("to") Instant to);
+
+    /** Tâches non terminées dont le rappel choisi tombe dans ]from, to]. */
+    @Query("select t from Task t join fetch t.user where t.status <> :done and t.reminderAt > :from and t.reminderAt <= :to")
+    List<Task> findOpenTasksRemindedBetween(@Param("done") TaskStatus done, @Param("from") Instant from,
+                                            @Param("to") Instant to);
+
+    /** Utilisateurs qui veulent le rappel de saisie du temps et n'ont rien saisi ce jour-là. */
+    @Query("select u from User u where u.notificationPreferences.dailyTimeReminder = true and not exists "
+            + "(select te.id from TimeEntry te where te.user = u and te.workDate = :day)")
+    List<User> findUsersWithoutTimeOn(@Param("day") LocalDate day);
 
     /** Parmi ces clés, celles qui existent déjà : une seule requête pour tout un passage. */
     @Query("select n.dedupKey from Notification n where n.dedupKey in :keys")

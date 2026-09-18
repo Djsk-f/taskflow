@@ -10,5 +10,9 @@ public enum NotificationType {
     /** Échéance dans moins d'une heure. */
     DUE_IN_1H,
     /** Échéance dépassée, tâche non terminée. */
-    OVERDUE
+    OVERDUE,
+    /** Rappel choisi par l'utilisateur sur la tâche (« me le rappeler le… »). */
+    REMINDER,
+    /** Jour ouvré, en fin de journée, sans aucun temps saisi (réglage facultatif). */
+    NO_TIME_LOGGED
 }

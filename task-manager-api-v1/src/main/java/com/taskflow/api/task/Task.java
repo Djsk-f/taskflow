@@ -59,6 +59,10 @@ public class Task extends Auditable {
     @Column(name = "due_date")
     private Instant dueDate;
 
+    /** Rappel choisi par l'utilisateur ; indépendant de l'échéance (peut exister sans elle). */
+    @Column(name = "reminder_at")
+    private Instant reminderAt;
+
     /**
      * Temps total saisi sur la tâche, en minutes, calculé par la base à chaque lecture
      * (sous-requête) : les listes l'obtiennent sans requête supplémentaire par tâche.
