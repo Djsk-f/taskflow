@@ -7,7 +7,7 @@ se connecte, puis gère **ses** tâches — tableau Kanban, recherche, filtres, 
 et **le temps qu'il y passe** grâce aux feuilles de temps. Interface responsive,
 en français et en anglais, en thème clair ou sombre.
 
-- **API** : Java 21 · Spring Boot 4 · Spring Security + JWT · JPA / Hibernate · MySQL 8 · Flyway
+- **API** : Java 21 · Spring Boot 4 · Spring Security + JWT · JPA / Hibernate · MySQL 8 · Flyway · OpenAPI (Swagger UI)
 - **Interface** : React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Radix) · TanStack Query · dnd-kit · i18next
 
 ![Tableau Kanban](docs/screenshots/tasks-kanban.png)
@@ -66,6 +66,7 @@ bouton « retour » du navigateur fonctionne. Une échéance dépassée est sign
 | Langage serveur | Java | 21 |
 | Framework | Spring Boot (Web MVC, Security, Data JPA, Validation, Actuator) | 4.1.1 |
 | Jetons | JJWT | 0.12.6 |
+| Documentation d'API | springdoc-openapi (OpenAPI 3.1, Swagger UI) | 3.1.1 |
 | Base de données | MySQL (via Docker) | 8.4 |
 | Migrations | Flyway | géré par Spring Boot |
 | Tests serveur | JUnit 5, Mockito, Spring Boot Test, H2 (en mémoire) | gérés par Spring Boot |
@@ -241,6 +242,22 @@ MySQL et le secret JWT ne peuvent pas se retrouver dans le bundle (vérifié sur
 
 ## API REST
 
+### Documentation interactive (Swagger UI)
+
+**http://localhost:8080/swagger-ui.html** — toutes les routes, leurs paramètres, leurs corps
+et leurs réponses (y compris les erreurs), essayables depuis le navigateur :
+
+1. `POST /api/v1/auth/login` → **Try it out** → saisir email et mot de passe → **Execute** ;
+2. copier `accessToken`, cliquer sur **Authorize** (en haut à droite) et le coller ;
+3. toutes les routes protégées sont alors appelables ; le jeton est conservé au rechargement.
+
+Contrat brut au format OpenAPI 3.1 : http://localhost:8080/v3/api-docs (importable dans
+Postman ou Insomnia). La documentation est publique : elle ne contient aucune donnée.
+
+![Swagger UI](docs/screenshots/swagger.png)
+
+### Routes
+
 Base : `http://localhost:8080/api/v1`. Sauf mention contraire, chaque route exige
 l'en-tête `Authorization: Bearer <jeton>`.
 
@@ -400,6 +417,7 @@ de jetons de couleur.
 | **Temps total calculé en SQL** (`@Formula`) | Chaque liste de tâches obtient son temps total dans la même requête, sans appel par tâche | Stocker un total à maintenir à la main |
 | **Jours en `LocalDate`** | Une feuille de temps compte des journées, pas des instants : pas de décalage de fuseau | Stocker des horodatages |
 | **Palette de statuts validée** | Couleurs de la maquette ré-étagées pour rester distinctes en cas de daltonisme, en clair comme en sombre ; le texte coloré a ses propres nuances contrastées | Reprendre les couleurs de la maquette telles quelles |
+| **Documentation générée depuis le code** (springdoc) | Le contrat affiché ne peut pas diverger du code ; l'identifiant utilisateur (`@CurrentUser`) est masqué car il vient du jeton ; les réponses d'erreur standard (400/401/404) sont ajoutées à chaque route par un seul composant | Un fichier OpenAPI écrit à la main |
 | **Un seul `.env` racine** | Une seule source de configuration pour Docker, l'API et Vite | Un fichier par module |
 | **nginx relaie `/api` dans l'image de l'interface** | Même origine pour le navigateur : pas de CORS à ouvrir, un seul port exposé, image indépendante de l'adresse de l'API | Appeler l'API sur un autre port et élargir le CORS |
 
@@ -421,7 +439,7 @@ de jetons de couleur.
 
 ## Tests et qualité
 
-**API** — 39 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+**API** — 42 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
 
 ```bash
 cd task-manager-api-v1
@@ -437,6 +455,7 @@ cd task-manager-api-v1
 | `JwtServiceTest` | 8 | Jeton relu correctement ; jeton altéré, signé par une autre clé, expiré ou illisible refusé ; secret absent ou trop court refusé ; durée conforme |
 | `TaskServiceTest` | 4 | Tâche rattachée à l'utilisateur authentifié ; tâche d'autrui introuvable en lecture et en suppression, modification sans aucune écriture |
 | `AuthServiceTest` | 3 | Email en double refusé, email normalisé et mot de passe haché, message générique sur identifiants invalides |
+| `OpenApiDocumentationTest` | 3 | Documentation publique et complète, connexion publique, routes protégées avec 401/404 documentés, aucun paramètre `userId` exposé ; Swagger UI accessible |
 | `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
 **Intégration continue** : à chaque push et pull request, GitHub Actions lance les tests
@@ -495,7 +514,7 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
   minute, sans notification push ni e-mail.
 - **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
   l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`.
-- **Non réalisés (bonus)** : déploiement public, documentation Swagger.
+- **Non réalisé (bonus)** : déploiement public.
 - **Éléments de la maquette volontairement non repris** : avatars d'équipe, intégrations
   (Slack, GitHub, Gmail…), messagerie et images de couverture des cartes. TaskFlow est
   mono-utilisateur ; les reproduire aurait donné des contrôles décoratifs sans fonction.
