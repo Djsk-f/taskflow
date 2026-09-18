@@ -216,4 +216,20 @@ class TaskApiSecurityTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
+
+    @Test
+    @DisplayName("tri métier et filtre d'échéance passent par l'API ; une échéance inconnue est refusée")
+    void sortAndDueFilterAreExposed() throws Exception {
+        String bearerAlice = "Bearer " + tokenAlice;
+
+        mockMvc.perform(get("/api/v1/tasks?sort=priority,desc&due=THIS_WEEK").header(HttpHeaders.AUTHORIZATION, bearerAlice))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+        mockMvc.perform(get("/api/v1/tasks?sort=dueDate,asc").header(HttpHeaders.AUTHORIZATION, bearerAlice))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("Tâche d'Alice"));
+        mockMvc.perform(get("/api/v1/tasks?due=SOON").header(HttpHeaders.AUTHORIZATION, bearerAlice))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
 }

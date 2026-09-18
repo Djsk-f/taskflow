@@ -77,7 +77,7 @@ class TaskRepositoryIsolationTest {
     @DisplayName("la recherche filtrée ne renvoie que les tâches du propriétaire")
     void filteredSearchIsScopedToOwner() {
         var page = taskRepository.findAll(
-                TaskSpecifications.forFilter(alice.getId(), new TaskFilter(null, null, null)),
+                TaskSpecifications.forFilter(alice.getId(), new TaskFilter(null, null, null, null)),
                 PageRequest.of(0, 10));
 
         assertThat(page.getTotalElements()).isEqualTo(1);
@@ -88,7 +88,7 @@ class TaskRepositoryIsolationTest {
     @DisplayName("même une recherche portant sur le contenu d'autrui ne fuit pas")
     void searchOnOtherUsersContentLeaksNothing() {
         var page = taskRepository.findAll(
-                TaskSpecifications.forFilter(bob.getId(), new TaskFilter("Secret", null, null)),
+                TaskSpecifications.forFilter(bob.getId(), new TaskFilter("Secret", null, null, null)),
                 PageRequest.of(0, 10));
 
         assertThat(page.getTotalElements()).isZero();

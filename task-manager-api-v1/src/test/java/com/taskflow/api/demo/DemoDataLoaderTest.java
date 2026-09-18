@@ -72,7 +72,7 @@ class DemoDataLoaderTest {
     }
 
     private long countTasks(User user) {
-        return taskRepository.findAll(TaskSpecifications.forFilter(user.getId(), new TaskFilter(null, null, null)),
+        return taskRepository.findAll(TaskSpecifications.forFilter(user.getId(), new TaskFilter(null, null, null, null)),
                 PageRequest.of(0, 1)).getTotalElements();
     }
 }

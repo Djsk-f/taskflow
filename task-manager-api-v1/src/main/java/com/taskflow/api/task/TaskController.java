@@ -36,19 +36,20 @@ public class TaskController {
     private final TaskService taskService;
     private final TaskInsightService taskInsightService;
 
-    @Operation(summary = "Lister, rechercher, filtrer et paginer mes tâches", description = "`search` porte sur le titre et la description (insensible à la casse) ; `size` est plafonné à 50 ; tri par défaut `createdAt,desc`.")
-    @ApiResponse(responseCode = "400", description = "Paramètre invalide : statut, priorité, page ou tri inconnus (VALIDATION_ERROR).")
+    @Operation(summary = "Lister, rechercher, filtrer et paginer mes tâches", description = "`search` porte sur le titre et la description (insensible à la casse) ; `due` = `OVERDUE` (en retard) ou `THIS_WEEK` (à rendre sous 7 jours), tâches terminées exclues ; `size` est plafonné à 50. `sort` = `createdAt`, `dueDate`, `title`, `priority` ou `status`, suivi de `,asc` ou `,desc` (défaut `createdAt,desc`) : priorité et statut suivent leur ordre métier, les tâches sans échéance viennent toujours en dernier (et, triées par échéance, les terminées aussi).")
+    @ApiResponse(responseCode = "400", description = "Paramètre invalide : statut, priorité, échéance, page ou tri inconnus (VALIDATION_ERROR).")
     @GetMapping
     public PageResponse<TaskResponse> search(
             @CurrentUser Long userId,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(required = false) TaskPriority priority,
+            @RequestParam(required = false) TaskDueFilter due,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        return taskService.search(userId, new TaskFilter(search, status, priority),
-                TaskPageRequests.of(page, size, sort));
+        return taskService.search(userId, new TaskFilter(search, status, priority, due),
+                TaskSort.parse(sort), TaskPageRequests.of(page, size));
     }
 
     @Operation(summary = "Statistiques du tableau de bord", description = "Totaux par statut, tâches ouvertes par priorité, en retard et à rendre sous 7 jours.")

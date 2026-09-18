@@ -26,9 +26,11 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
-    public PageResponse<TaskResponse> search(Long userId, TaskFilter filter, Pageable pageable) {
+    public PageResponse<TaskResponse> search(Long userId, TaskFilter filter, TaskSort sort, Pageable pageable) {
         return PageResponse.from(
-                taskRepository.findAll(TaskSpecifications.forFilter(userId, filter), pageable),
+                taskRepository.findAll(
+                        TaskSpecifications.forFilter(userId, filter).and(TaskSpecifications.orderedBy(sort)),
+                        pageable),
                 TaskMapper::toResponse);
     }
 

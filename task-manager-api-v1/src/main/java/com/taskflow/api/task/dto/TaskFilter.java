@@ -1,5 +1,6 @@
 package com.taskflow.api.task.dto;
 
+import com.taskflow.api.task.TaskDueFilter;
 import com.taskflow.api.task.TaskPriority;
 import com.taskflow.api.task.TaskStatus;
 
@@ -7,5 +8,6 @@ import com.taskflow.api.task.TaskStatus;
 public record TaskFilter(
         String search,
         TaskStatus status,
-        TaskPriority priority) {
+        TaskPriority priority,
+        TaskDueFilter due) {
 }

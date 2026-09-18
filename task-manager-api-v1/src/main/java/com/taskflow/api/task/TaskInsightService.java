@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskInsightService {
 
     static final int MAX_DUE_WINDOW_HOURS = 720;
-    private static final Duration WEEK = Duration.ofDays(7);
 
     private final TaskRepository taskRepository;
 
@@ -45,7 +44,7 @@ public class TaskInsightService {
         long total = byStatus.values().stream().mapToLong(Long::longValue).sum();
         long overdue = taskRepository.countByUserIdAndStatusNotAndDueDateBefore(userId, TaskStatus.DONE, now);
         long dueThisWeek = taskRepository.countByUserIdAndStatusNotAndDueDateBetween(
-                userId, TaskStatus.DONE, now, now.plus(WEEK));
+                userId, TaskStatus.DONE, now, now.plus(TaskDueFilter.WEEK));
 
         return new TaskStatsResponse(total, byStatus, openByPriority, overdue, dueThisWeek);
     }
