@@ -38,21 +38,22 @@ en français et en anglais, en thème clair ou sombre.
 | Compte | Inscription, connexion par JWT, session restaurée au rechargement, déconnexion |
 | Profil | Modification du nom et de l'email, changement de mot de passe (mot de passe actuel exigé) |
 | Tâches | Création, modification et suppression (avec confirmation) — titre, description, statut, priorité, échéance |
-| Kanban | Vue par défaut : une colonne par statut avec compteur ; **glisser-déposer** à la souris, au doigt ou au clavier pour changer le statut ; `+` pour créer directement dans une colonne ; menu « Déplacer vers » sur chaque carte |
-| Vues | **Kanban · Tableau · Liste**, mémorisées dans l'URL avec les filtres |
-| Tableau de bord | Chiffres clés, répartition par statut, tâches ouvertes par priorité, échéances de la semaine |
+| Kanban | Vue par défaut : une colonne par statut avec compteur ; **glisser-déposer** à la souris, au doigt ou au clavier pour changer le statut ; `+` pour créer directement dans une colonne ; menu « Déplacer vers » sur chaque carte ; compte neuf accueilli par « Créer ma première tâche » |
+| Terminer | Case « terminée » en un clic sur chaque carte et chaque ligne (un second clic rouvre la tâche) ; tout changement de statut propose **« Annuler »** pendant 8 s |
+| Vues | **Kanban · Grille · Liste**, mémorisées dans l'URL avec les filtres et le tri |
+| Tableau de bord | Chiffres clés cliquables (« 3 en retard » ouvre ces 3 tâches), répartition par statut, tâches ouvertes par priorité, échéances de la semaine |
 | Notifications | Cloche de l'en-tête : tâches en retard ou à échéance dans les 24 h |
 | Mode sombre | Interrupteur dans la barre latérale ; suit la préférence du système par défaut, choix mémorisé |
 | Notifications | Messages de succès et d'erreur colorés selon leur type (vert, rouge, orange, bleu) |
-| Liste | Uniquement les tâches de l'utilisateur connecté, les plus récentes d'abord |
+| Liste et tri | Uniquement les tâches de l'utilisateur connecté, **ce qui presse d'abord** (échéance la plus proche ; sans échéance, puis terminées, en dernier) ; en-têtes de la grille cliquables (titre, statut, priorité, échéance) et menu « Trier » dans toutes les vues ; priorité et statut triés dans leur ordre métier, pas alphabétique |
 | Recherche | Insensible à la casse, sur le titre **et** la description, déclenchée 300 ms après la frappe |
-| Filtres | Bouton « Filtres » : pastilles de priorité (`Basse`, `Moyenne`, `Haute`) et de statut (`À faire`, `En cours`, `En revue`, `Terminé`), filtres actifs en étiquettes supprimables, cumulables avec la recherche |
+| Filtres | Bouton « Filtres » : pastilles de priorité (`Basse`, `Moyenne`, `Haute`), de statut (`À faire`, `En cours`, `En revue`, `Terminé`) et d'échéance (`En retard`, `Cette semaine`), filtres actifs en étiquettes supprimables, cumulables avec la recherche |
 | Feuilles de temps | Saisie du temps passé sur une tâche (« 1h30 », « 45m », « 2 »…) ; grille hebdomadaire tâches × jours avec totaux par tâche, par jour et pour la semaine ; navigation d'une semaine à l'autre ; export CSV compatible Excel ; temps total affiché sur chaque tâche |
 | Langues | Français et anglais : langue du navigateur au premier accès, puis choix mémorisé ; les messages d'erreur de l'API suivent la langue |
 | Pagination | Adaptée à chaque liste : **tableau et liste** paginés (pages numérotées, 10 / 20 / 50 par page, mémorisé dans l'URL) ; **colonnes Kanban** par lots de 10 (« Afficher 10 de plus · N restantes ») ; **échéances du tableau de bord** 5 par page ; **cloche** limitée à 5 par groupe avec accès à la liste complète ; **historique de temps** par lots de 5 ; ajout d'une tâche à la feuille de temps par **recherche** (10 suggestions) plutôt que par une longue liste |
-| Erreurs | Format d'erreur unique côté API ; messages du serveur affichés sous les champs ou dans le formulaire ; écran « Réessayer » si le serveur est injoignable |
-| Responsive | Colonnes Kanban défilantes et menu en tiroir sur mobile, tableau remplacé par des cartes ; cibles tactiles ≥ 40 px |
-| Accessibilité | Navigation complète au clavier, focus rendu à la fermeture des fenêtres, annonces vocales du glisser-déposer, contrastes de texte ≥ 4,5:1 (WCAG AA) en clair comme en sombre |
+| Erreurs | Format d'erreur unique côté API ; messages du serveur affichés sous les champs ou dans le formulaire ; écran « Réessayer » si le serveur est injoignable ; **session expirée** : message explicite, retour à la page quittée (filtres compris) et saisie en cours rendue ; fermer un formulaire modifié demande confirmation |
+| Responsive | Colonnes Kanban défilantes et menu en tiroir sur mobile, grille remplacée par des cartes, chiffres clés sur deux colonnes ; cibles tactiles ≥ 40 px |
+| Accessibilité | Lien « Aller au contenu », navigation complète au clavier, mot de passe affichable, en-têtes de tri annoncés (`aria-sort`), focus rendu à la fermeture des fenêtres, annonces vocales du glisser-déposer, contrastes de texte ≥ 4,5:1 (WCAG AA) en clair comme en sombre |
 
 Les filtres et la page courante sont portés par l'URL : un lien filtré se partage et le
 bouton « retour » du navigateur fonctionne. Une échéance dépassée est signalée en rouge.
@@ -300,9 +301,10 @@ l'en-tête `Authorization: Bearer <jeton>`.
 | `search` | — | Insensible à la casse, sur `title` et `description` |
 | `status` | — | `TODO` · `IN_PROGRESS` · `IN_REVIEW` · `DONE` |
 | `priority` | — | `LOW` · `MEDIUM` · `HIGH` |
+| `due` | — | `OVERDUE` (échéance dépassée) · `THIS_WEEK` (sous 7 jours) ; tâches terminées exclues, mêmes définitions que `/tasks/stats` |
 | `page` | `0` | Entier ≥ 0 |
 | `size` | `10` | 1 à 50 (au-delà, ramené à 50) |
-| `sort` | `createdAt,desc` | Champs autorisés : `createdAt`, `dueDate`, `title`, `priority`, `status` |
+| `sort` | `createdAt,desc` | `champ,asc` ou `champ,desc` ; champs : `createdAt`, `dueDate`, `title`, `priority`, `status`. Priorité et statut suivent leur ordre métier ; les tâches sans échéance viennent toujours en dernier ; ordre stable d'une page à l'autre |
 
 Réponse paginée : `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`.
 Chaque tâche expose aussi `timeSpentMinutes`, son temps total saisi.
@@ -457,7 +459,7 @@ de jetons de couleur.
 
 ## Tests et qualité
 
-**API** — 47 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+**API** — 55 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
 
 ```bash
 cd task-manager-api-v1
@@ -467,7 +469,8 @@ cd task-manager-api-v1
 | Classe | Tests | Ce qui est vérifié |
 |--------|-------|--------------------|
 | `TaskRepositoryIsolationTest` | 8 | Le propriétaire retrouve sa tâche ; un autre utilisateur ne peut ni la lire, ni la supprimer, ni la trouver par recherche ou filtre ; statistiques et échéances limitées au propriétaire, tâches terminées exclues ; horodatage automatique |
-| `TaskApiSecurityTest` | 6 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe (changement de statut compris, sans effet), liste et statistiques limitées au demandeur, statuts et format d'erreur conservés, messages en anglais ou en français selon `Accept-Language` |
+| `TaskSortAndDueFilterTest` | 7 | Tri métier exécuté par la vraie requête (Haute → Basse, À faire → Terminé, sans échéance et terminées en dernier), pagination sans doublon ni oubli, filtres « en retard » et « cette semaine » identiques aux compteurs du tableau de bord, tri hors liste blanche refusé |
+| `TaskApiSecurityTest` | 7 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe (changement de statut compris, sans effet), liste et statistiques limitées au demandeur, statuts et format d'erreur conservés, messages en anglais ou en français selon `Accept-Language`, tri et filtre d'échéance exposés |
 | `TimeEntryRepositoryIsolationTest` | 3 | Semaine limitée au propriétaire ; saisie d'autrui ni lisible ni supprimable ; total d'une tâche calculé en base, saisies supprimées avec la tâche |
 | `TimeEntryApiTest` | 3 | Routes fermées sans jeton ; saisie, modification et suppression par le propriétaire, `404` pour tout autre ; validation traduite |
 | `JwtServiceTest` | 8 | Jeton relu correctement ; jeton altéré, signé par une autre clé, expiré ou illisible refusé ; secret absent ou trop court refusé ; durée conforme |
@@ -483,11 +486,11 @@ cd task-manager-api-v1
 de l'API, le lint, les tests et le build de l'interface, puis démarre l'application complète
 avec Docker Compose et y joue les tests Playwright (`.github/workflows/ci.yml`).
 
-**Interface** — 35 tests Vitest (logique et composants) et 4 tests de bout en bout Playwright :
+**Interface** — 40 tests Vitest (logique et composants) et 5 tests de bout en bout Playwright :
 
 ```bash
 cd task-manager-web-v1
-npm test             # Vitest : durées, semaines, filtres d'URL, pagination, dictionnaires, panneau de filtres
+npm test             # Vitest : durées, semaines, filtres et tri d'URL, pagination, dictionnaires, panneau de filtres et de tri
 npm run test:e2e     # Playwright, sur l'application lancée par docker compose (http://localhost:3000)
 npm run lint         # oxlint
 npm run build        # vérification stricte des types (tsc) + build
@@ -495,7 +498,9 @@ npm run build        # vérification stricte des types (tsc) + build
 
 Le parcours de bout en bout crée un compte, puis une tâche ; il la déplace, y saisit
 du temps, la retrouve dans la feuille de temps et la supprime. Il vérifie aussi la
-protection des pages privées, la bascule de langue et le compte de démonstration.
+protection des pages privées, la bascule de langue et le compte de démonstration. Un
+second parcours part d'un compte neuf : première tâche, « terminée » puis « Annuler », et
+session expirée en pleine saisie (message, retour à la page filtrée, saisie rendue).
 Première exécution locale : `npx playwright install chromium`.
 
 ---
@@ -506,9 +511,9 @@ Première exécution locale : `npx playwright install chromium`.
 |------------------|-----------------|
 | ![Feuille de temps](docs/screenshots/timesheets.png) | ![Tableau de bord](docs/screenshots/dashboard.png) |
 
-| Anglais, mode sombre, filtre actif | Vue Tableau |
+| Anglais, mode sombre, filtre actif | Vue Grille |
 |------------------------------------|-------------|
-| ![Kanban en anglais et en mode sombre](docs/screenshots/tasks-kanban-dark.png) | ![Vue Tableau](docs/screenshots/tasks-table.png) |
+| ![Kanban en anglais et en mode sombre](docs/screenshots/tasks-kanban-dark.png) | ![Vue Grille](docs/screenshots/tasks-table.png) |
 
 | Modification d'une tâche | Mobile | Connexion |
 |--------------------------|--------|-----------|
@@ -529,12 +534,17 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
 - **Limitation des connexions en mémoire** : valable pour une seule instance de l'API (pas de
   partage entre instances) ; un tiers connaissant un email peut le bloquer 15 minutes.
 - **Feuilles de temps volontairement simples** : pas de minuteur, pas de validation par un
-  responsable, export limité à la semaine affichée ; le sélecteur d'ajout de ligne propose
-  les 50 premières tâches par ordre alphabétique.
+  responsable, pas de modification d'une saisie (la supprimer puis la ressaisir), export
+  limité à la semaine affichée.
 - **Traduction** : l'interface et les messages de l'API sont traduits ; les contenus saisis
   par l'utilisateur (titres, descriptions) restent tels quels.
-- **Kanban limité à 50 cartes par colonne** : au-delà, un lien ouvre la vue Tableau filtrée
+- **Kanban limité à 50 cartes par colonne** : au-delà, un lien ouvre la vue Grille filtrée
   sur le statut (paginée). Pas d'ordre manuel des cartes au sein d'une colonne.
+- **Gestion personnelle, pas d'équipe** : pas de tâches partagées ni assignées, pas de
+  projets ni d'étiquettes (un préfixe dans le titre et la recherche en tiennent lieu), pas
+  de tâches récurrentes.
+- **Pas de « mot de passe oublié »** : il suppose l'envoi d'e-mails (lien à usage unique et
+  durée limitée), hors du périmètre de ce test.
 - **Notifications calculées à la demande** : rafraîchies à chaque modification et chaque
   minute, sans notification push ni e-mail.
 - **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
