@@ -48,6 +48,11 @@ app:
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  # Compte de démonstration créé au démarrage s'il n'existe pas (voir DemoDataLoader).
+  demo-data:
+    enabled: ${APP_DEMO_DATA:false}
+    # Identifiants publics de la démo (documentés dans le README), pas un secret.
+    password: ${APP_DEMO_PASSWORD:Demo2026!}
 
 springdoc:
   swagger-ui:
