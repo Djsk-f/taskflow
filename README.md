@@ -1,11 +1,12 @@
 # TaskFlow
 
 Application web de gestion de tâches personnelles : chaque utilisateur crée un compte,
-se connecte, puis gère **ses** tâches — création, modification, suppression, recherche,
-filtres et pagination — dans une interface responsive.
+se connecte, puis gère **ses** tâches — tableau Kanban, recherche, filtres, pagination —
+et **le temps qu'il y passe** grâce aux feuilles de temps. Interface responsive,
+en français et en anglais, en thème clair ou sombre.
 
 - **API** : Java 21 · Spring Boot 4 · Spring Security + JWT · JPA / Hibernate · MySQL 8 · Flyway
-- **Interface** : React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Radix) · TanStack Query · dnd-kit
+- **Interface** : React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Radix) · TanStack Query · dnd-kit · i18next
 
 ![Tableau Kanban](docs/screenshots/tasks-kanban.png)
 
@@ -40,9 +41,12 @@ filtres et pagination — dans une interface responsive.
 | Tableau de bord | Chiffres clés, répartition par statut, tâches ouvertes par priorité, échéances de la semaine |
 | Notifications | Cloche de l'en-tête : tâches en retard ou à échéance dans les 24 h |
 | Mode sombre | Interrupteur dans la barre latérale ; suit la préférence du système par défaut, choix mémorisé |
+| Notifications | Messages de succès et d'erreur colorés selon leur type (vert, rouge, orange, bleu) |
 | Liste | Uniquement les tâches de l'utilisateur connecté, les plus récentes d'abord |
 | Recherche | Insensible à la casse, sur le titre **et** la description, déclenchée 300 ms après la frappe |
-| Filtres | Par statut (`À faire`, `En cours`, `En revue`, `Terminé`) et par priorité (`Basse`, `Moyenne`, `Haute`), cumulables avec la recherche |
+| Filtres | Bouton « Filtres » : pastilles de priorité (`Basse`, `Moyenne`, `Haute`) et de statut (`À faire`, `En cours`, `En revue`, `Terminé`), filtres actifs en étiquettes supprimables, cumulables avec la recherche |
+| Feuilles de temps | Saisie du temps passé sur une tâche (« 1h30 », « 45m », « 2 »…) ; grille hebdomadaire tâches × jours avec totaux par tâche, par jour et pour la semaine ; navigation d'une semaine à l'autre ; export CSV compatible Excel ; temps total affiché sur chaque tâche |
+| Langues | Français et anglais : langue du navigateur au premier accès, puis choix mémorisé ; les messages d'erreur de l'API suivent la langue |
 | Pagination | 10 tâches par page, « x–y sur N », boutons désactivés aux extrémités |
 | Erreurs | Format d'erreur unique côté API ; messages du serveur affichés sous les champs ou dans le formulaire ; écran « Réessayer » si le serveur est injoignable |
 | Responsive | Colonnes Kanban défilantes et menu en tiroir sur mobile, tableau remplacé par des cartes ; cibles tactiles ≥ 40 px |
@@ -69,6 +73,7 @@ bouton « retour » du navigateur fonctionne. Une échéance dépassée est sign
 | Styles | Tailwind CSS | 4 |
 | Composants | shadcn/ui sur Radix UI, icônes lucide-react | — |
 | Glisser-déposer | dnd-kit | 6 |
+| Traduction | i18next, react-i18next | 26 / 17 |
 | État serveur | TanStack Query | 5 |
 | Formulaires | react-hook-form + Zod | 7 / 4 |
 | Routage / HTTP | React Router, axios | 7 / 1 |
@@ -251,6 +256,11 @@ l'en-tête `Authorization: Bearer <jeton>`.
 | `PATCH` | `/tasks/{id}/status` | `200` | Change uniquement le statut (`{"status": "DONE"}`) — glisser-déposer du Kanban |
 | `GET` | `/tasks/stats` | `200` | Totaux par statut, tâches ouvertes par priorité, en retard, à rendre sous 7 jours |
 | `GET` | `/tasks/due?withinHours=24` | `200` | Tâches non terminées en retard ou à échéance dans la fenêtre (1 h à 30 jours), 20 au plus |
+| `GET` | `/time-entries?from=2026-09-14&to=2026-09-20` | `200` | Saisies de temps de la période (62 jours au plus), du plus ancien au plus récent |
+| `GET` | `/tasks/{id}/time-entries` | `200` | Saisies de temps d'une tâche, les plus récentes d'abord |
+| `POST` | `/time-entries` | `201` | Saisit du temps : `taskId`, `workDate` (`AAAA-MM-JJ`), `durationMinutes` (1 à 1440), `note` |
+| `PUT` | `/time-entries/{id}` | `200` | Modifie une saisie |
+| `DELETE` | `/time-entries/{id}` | `204` | Supprime une saisie |
 | `DELETE` | `/tasks/{id}` | `204` | Supprime une tâche |
 | `GET` | `/actuator/health` | `200` | État de l'application — **public**, hors `/api/v1` |
 
@@ -266,6 +276,10 @@ l'en-tête `Authorization: Bearer <jeton>`.
 | `sort` | `createdAt,desc` | Champs autorisés : `createdAt`, `dueDate`, `title`, `priority`, `status` |
 
 Réponse paginée : `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`.
+Chaque tâche expose aussi `timeSpentMinutes`, son temps total saisi.
+
+**Langue des messages** : l'API répond en français par défaut, en anglais avec
+`Accept-Language: en` (erreurs métier, validation, 401/403).
 
 **Format d'erreur unique** — toutes les erreurs, sans exception :
 
@@ -323,9 +337,10 @@ auth/        inscription, connexion                 (controller → service → 
 user/        profil, mot de passe                   (entité, repository, service, mapper, controller)
 task/        CRUD, recherche, filtres, pagination   (+ Specifications, PageRequests)
              statistiques et échéances              (TaskInsightService, lectures agrégées)
+timeentry/   feuilles de temps                      (entité, repository, service, mapper, controller)
 security/    JwtService, filtre JWT, @CurrentUser, réponses 401/403 au format commun
 config/      SecurityConfig, CorsConfig
-common/      PageResponse, format d'erreur, GlobalExceptionHandler, Auditable
+common/      PageResponse, format d'erreur, GlobalExceptionHandler, Auditable, Messages (traduction)
 ```
 
 Le contrôleur ne contient aucune logique métier ; le service porte les règles et les
@@ -342,11 +357,13 @@ src/
 │   ├── auth/     contexte d'authentification, pages Connexion et Inscription
 │   ├── tasks/    page Tâches (Kanban, tableau, liste), filtres, modales, cloche, taskMeta
 │   ├── dashboard/ tableau de bord
+│   ├── timesheets/ feuilles de temps, saisie de temps, export CSV
 │   └── profile/  page Profil, formulaires
 ├── shared/
 │   ├── api/      client HTTP unique, traduction des erreurs
 │   ├── ui/       primitives shadcn/ui (Radix)
 │   ├── components/ formulaires, états vides/erreur/chargement, coquille (sidebar, en-tête)
+│   ├── i18n/     traduction (dictionnaires fr/en typés, sélecteur de langue)
 │   ├── theme/    mode sombre
 │   └── hooks/, lib/, config/, types/
 └── styles/       jetons de couleur du design system
@@ -376,6 +393,10 @@ de jetons de couleur.
 | **dnd-kit pour le Kanban** | Glisser-déposer à la souris, au doigt **et au clavier**, avec annonces pour lecteurs d'écran | react-beautiful-dnd (abandonné), glisser-déposer HTML5 natif (inaccessible au clavier) |
 | **Déplacement optimiste** | La carte change de colonne immédiatement ; elle revient à sa place avec un message si le serveur refuse | Attendre la réponse avant de bouger la carte |
 | **`PATCH /status` dédié** | Un déplacement n'envoie que le statut : pas de risque d'écraser un champ modifié entre-temps | Renvoyer toute la tâche avec `PUT` |
+| **Traduction de bout en bout** | Interface (i18next, clés vérifiées à la compilation : une clé absente en anglais ne compile pas) **et** API (`messages*.properties` selon `Accept-Language`) : un anglophone ne voit jamais un message français | Traduire l'interface seule |
+| **`user_id` sur chaque saisie de temps** | Les lectures de feuilles de temps filtrent directement sur le propriétaire, comme les tâches ; la tâche visée est vérifiée à chaque écriture | Passer par la tâche pour retrouver le propriétaire |
+| **Temps total calculé en SQL** (`@Formula`) | Chaque liste de tâches obtient son temps total dans la même requête, sans appel par tâche | Stocker un total à maintenir à la main |
+| **Jours en `LocalDate`** | Une feuille de temps compte des journées, pas des instants : pas de décalage de fuseau | Stocker des horodatages |
 | **Palette de statuts validée** | Couleurs de la maquette ré-étagées pour rester distinctes en cas de daltonisme, en clair comme en sombre ; le texte coloré a ses propres nuances contrastées | Reprendre les couleurs de la maquette telles quelles |
 | **Un seul `.env` racine** | Une seule source de configuration pour Docker, l'API et Vite | Un fichier par module |
 | **nginx relaie `/api` dans l'image de l'interface** | Même origine pour le navigateur : pas de CORS à ouvrir, un seul port exposé, image indépendante de l'adresse de l'API | Appeler l'API sur un autre port et élargir le CORS |
@@ -398,7 +419,7 @@ de jetons de couleur.
 
 ## Tests et qualité
 
-**API** — 31 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+**API** — 39 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
 
 ```bash
 cd task-manager-api-v1
@@ -408,11 +429,13 @@ cd task-manager-api-v1
 | Classe | Tests | Ce qui est vérifié |
 |--------|-------|--------------------|
 | `TaskRepositoryIsolationTest` | 8 | Le propriétaire retrouve sa tâche ; un autre utilisateur ne peut ni la lire, ni la supprimer, ni la trouver par recherche ou filtre ; statistiques et échéances limitées au propriétaire, tâches terminées exclues ; horodatage automatique |
-| `TaskApiSecurityTest` | 5 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe (changement de statut compris, sans effet), liste et statistiques limitées au demandeur, statuts et format d'erreur conservés |
+| `TaskApiSecurityTest` | 6 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe (changement de statut compris, sans effet), liste et statistiques limitées au demandeur, statuts et format d'erreur conservés, messages en anglais ou en français selon `Accept-Language` |
+| `TimeEntryRepositoryIsolationTest` | 3 | Semaine limitée au propriétaire ; saisie d'autrui ni lisible ni supprimable ; total d'une tâche calculé en base, saisies supprimées avec la tâche |
+| `TimeEntryApiTest` | 3 | Routes fermées sans jeton ; saisie, modification et suppression par le propriétaire, `404` pour tout autre ; validation traduite |
 | `JwtServiceTest` | 8 | Jeton relu correctement ; jeton altéré, signé par une autre clé, expiré ou illisible refusé ; secret absent ou trop court refusé ; durée conforme |
 | `TaskServiceTest` | 4 | Tâche rattachée à l'utilisateur authentifié ; tâche d'autrui introuvable en lecture et en suppression, modification sans aucune écriture |
 | `AuthServiceTest` | 3 | Email en double refusé, email normalisé et mot de passe haché, message générique sur identifiants invalides |
-| `GlobalExceptionHandlerTest` | 3 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP |
+| `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
 **Interface** :
 
@@ -430,17 +453,17 @@ comptes, navigation au clavier, largeurs 375, 768 et 1440 px.
 
 ## Captures d'écran
 
-| Tableau de bord | Mode sombre |
-|-----------------|-------------|
-| ![Tableau de bord](docs/screenshots/dashboard.png) | ![Kanban en mode sombre](docs/screenshots/tasks-kanban-dark.png) |
+| Feuille de temps | Tableau de bord |
+|------------------|-----------------|
+| ![Feuille de temps](docs/screenshots/timesheets.png) | ![Tableau de bord](docs/screenshots/dashboard.png) |
 
-| Vue Tableau | Modification d'une tâche |
-|-------------|--------------------------|
-| ![Vue Tableau](docs/screenshots/tasks-table.png) | ![Modale d'édition](docs/screenshots/task-dialog.png) |
+| Anglais, mode sombre, filtre actif | Vue Tableau |
+|------------------------------------|-------------|
+| ![Kanban en anglais et en mode sombre](docs/screenshots/tasks-kanban-dark.png) | ![Vue Tableau](docs/screenshots/tasks-table.png) |
 
-| Mobile | Connexion |
-|--------|-----------|
-| ![Kanban sur mobile](docs/screenshots/tasks-mobile.png) | ![Connexion](docs/screenshots/login.png) |
+| Modification d'une tâche | Mobile | Connexion |
+|--------------------------|--------|-----------|
+| ![Modale d'édition](docs/screenshots/task-dialog.png) | ![Kanban sur mobile](docs/screenshots/tasks-mobile.png) | ![Connexion](docs/screenshots/login.png) |
 
 ---
 
@@ -454,7 +477,12 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
 - **Pas de refresh token** : la session expire au bout de 24 h, il faut se reconnecter.
 - **Pas de tests automatisés côté interface** : vérifications faites dans le navigateur.
   Piste : Vitest + Testing Library, puis Playwright pour les parcours.
-- **Bundle JavaScript en un seul fichier** (~770 kB, ~240 kB gzip). Piste : découpage par route.
+- **Bundle JavaScript en un seul fichier** (~850 kB, ~265 kB gzip). Piste : découpage par route.
+- **Feuilles de temps volontairement simples** : pas de minuteur, pas de validation par un
+  responsable, export limité à la semaine affichée ; le sélecteur d'ajout de ligne propose
+  les 50 premières tâches par ordre alphabétique.
+- **Traduction** : l'interface et les messages de l'API sont traduits ; les contenus saisis
+  par l'utilisateur (titres, descriptions) restent tels quels.
 - **Kanban limité à 50 cartes par colonne** : au-delà, un lien ouvre la vue Tableau filtrée
   sur le statut (paginée). Pas d'ordre manuel des cartes au sein d'une colonne.
 - **Notifications calculées à la demande** : rafraîchies à chaque modification et chaque
