@@ -1,6 +1,7 @@
 import { TaskPriorityBadge, TaskStatusBadge } from '@/features/tasks/components/TaskBadges'
 import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButton'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
+import { TaskReminder } from '@/features/tasks/components/TaskReminder'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
@@ -22,6 +23,7 @@ export function TaskList({ tasks, ...actions }: { tasks: Task[] } & TaskActionHa
               <TaskStatusBadge status={task.status} />
               <TaskPriorityBadge priority={task.priority} />
               <TaskDueDate task={task} compact />
+              <TaskReminder task={task} />
               <TaskTimeSpent task={task} />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import type { AppNotification } from '@/features/notifications/types'
+import type { AppNotification, NotificationPreferences } from '@/features/notifications/types'
 import { httpClient } from '@/shared/api/httpClient'
 import type { PageResponse } from '@/shared/types/api'
 
@@ -19,5 +19,15 @@ export const notificationApi = {
 
   async markAllRead(): Promise<void> {
     await httpClient.post('/notifications/read-all')
+  },
+
+  async preferences(): Promise<NotificationPreferences> {
+    const { data } = await httpClient.get<NotificationPreferences>('/users/me/notification-preferences')
+    return data
+  },
+
+  async updatePreferences(preferences: NotificationPreferences): Promise<NotificationPreferences> {
+    const { data } = await httpClient.put<NotificationPreferences>('/users/me/notification-preferences', preferences)
+    return data
   },
 }

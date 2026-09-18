@@ -1,6 +1,12 @@
 import { useAuth } from '@/features/auth/useAuth'
 import { useTaskMutations } from '@/features/tasks/hooks/useTaskMutations'
-import { taskFormSchema, toTaskPayload, type TaskFormValues } from '@/features/tasks/schemas'
+import {
+  REMINDER_MODES,
+  taskFormSchema,
+  toTaskFormValues,
+  toTaskPayload,
+  type TaskFormValues,
+} from '@/features/tasks/schemas'
 import { useTaskOptions } from '@/features/tasks/hooks/useTaskOptions'
 import { taskDraftStorage, type TaskDraft } from '@/features/tasks/taskDraft'
 import type { Task, TaskStatus } from '@/features/tasks/types'
@@ -11,7 +17,6 @@ import { applyApiErrorToForm } from '@/shared/components/form/applyApiErrorToFor
 import { FormSelectField } from '@/shared/components/form/FormSelectField'
 import { FormTextareaField } from '@/shared/components/form/FormTextareaField'
 import { FormTextField } from '@/shared/components/form/FormTextField'
-import { toDateTimeLocalValue } from '@/shared/lib/formatDate'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +39,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { HistoryIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
 const EMPTY_VALUES: TaskFormValues = {
@@ -43,6 +48,8 @@ const EMPTY_VALUES: TaskFormValues = {
   status: 'TODO',
   priority: 'MEDIUM',
   dueDate: '',
+  reminder: 'NONE',
+  reminderAt: '',
 }
 
 type TaskFormDialogProps = {
@@ -76,6 +83,8 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO
   })
   // Lu pendant le rendu : react-hook-form ne calcule isDirty que pour qui s'y abonne.
   const { isDirty } = form.formState
+  const reminder = useWatch({ control: form.control, name: 'reminder' })
+  const reminderOptions = REMINDER_MODES.map((mode) => ({ value: mode, label: t(`tasks.form.reminderModes.${mode}`) }))
 
   // À chaque ouverture, le formulaire repart de la tâche visée (ou à vide) : sans cela une
   // édition laisserait les valeurs de la précédente.
@@ -83,17 +92,7 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO
     if (!open) {
       return
     }
-    form.reset(
-      task
-        ? {
-            title: task.title,
-            description: task.description ?? '',
-            status: task.status,
-            priority: task.priority,
-            dueDate: toDateTimeLocalValue(task.dueDate),
-          }
-        : { ...EMPTY_VALUES, status: defaultStatus },
-    )
+    form.reset(task ? toTaskFormValues(task) : { ...EMPTY_VALUES, status: defaultStatus })
     // Un brouillon restauré compte comme une saisie : le fermer demandera confirmation.
     if (draft) {
       form.reset(draft.values, { keepDefaultValues: true })
@@ -181,7 +180,19 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO
               <FormSelectField control={form.control} name="priority" label={t('tasks.form.priority')} options={priorityOptions} />
             </div>
 
-            <FormTextField control={form.control} name="dueDate" label={t('tasks.form.dueDate')} type="datetime-local" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormTextField control={form.control} name="dueDate" label={t('tasks.form.dueDate')} type="datetime-local" />
+              <FormSelectField control={form.control} name="reminder" label={t('tasks.form.reminder')} options={reminderOptions} />
+            </div>
+            {reminder === 'CUSTOM' && (
+              <FormTextField
+                control={form.control}
+                name="reminderAt"
+                label={t('tasks.form.reminderAt')}
+                type="datetime-local"
+                hint={t('tasks.form.reminderHint')}
+              />
+            )}
 
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={requestClose}>

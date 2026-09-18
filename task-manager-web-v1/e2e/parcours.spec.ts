@@ -62,6 +62,8 @@ test('parcours complet : inscription, créer, déplacer, saisir du temps, feuill
   await page.getByRole('menuitem', { name: 'En cours' }).click()
   const inProgress = page.getByRole('region', { name: /^En cours/ })
   await expect(inProgress.getByRole('group', { name: title })).toBeVisible()
+  // Déplacement confirmé par le serveur (la carte a fini de changer de colonne)
+  await expect(page.getByText(`« ${title} » déplacée vers En cours.`)).toBeVisible()
 
   // Saisie de temps
   await page.getByRole('button', { name: `Actions sur « ${title} »` }).click()
@@ -113,4 +115,32 @@ test('premier pas, « terminée » annulable, et session expirée sans perte de 
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page).toHaveURL(/\/tasks\?view=table&priority=HIGH/)
   await expect(page.getByRole('dialog').getByLabel('Titre')).toHaveValue('Déclarer mes revenus')
+})
+
+test('un rappel choisi arrive dans la cloche et ouvre la tâche', async ({ page }) => {
+  test.setTimeout(120_000)
+  await registerFreshAccount(page)
+
+  // Rappel « à une date précise » réglé sur maintenant : le générateur le relève au passage suivant.
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+  await page.getByRole('button', { name: 'Créer ma première tâche' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByLabel('Titre').fill('Rappeler le garagiste')
+  await dialog.getByRole('combobox', { name: 'Rappel' }).click()
+  await page.getByRole('option', { name: 'À une date précise…' }).click()
+  await dialog.getByLabel('Date du rappel').fill(local)
+  await dialog.getByRole('button', { name: 'Créer la tâche' }).click()
+
+  const bell = page.getByRole('button', { name: /^Notifications/ })
+  await expect(async () => {
+    await page.reload()
+    await expect(bell).toHaveAccessibleName('Notifications : 1 non lue', { timeout: 2_000 })
+  }).toPass({ timeout: 90_000, intervals: [3_000] })
+
+  await bell.click()
+  await page.getByRole('button', { name: /Rappel.*Rappeler le garagiste/ }).click()
+  await expect(page.getByRole('dialog').getByLabel('Titre')).toHaveValue('Rappeler le garagiste')
+  await page.keyboard.press('Escape')
+  await expect(bell).toHaveAccessibleName('Notifications')
 })

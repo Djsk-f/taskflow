@@ -61,5 +61,9 @@ export function fromDateTimeLocalValue(localValue: string): string | undefined {
 
 /** Une échéance dépassée mérite un signalement visuel (sauf tâche terminée, vu par l'appelant). */
 export function isOverdue(dueDate: string | undefined): boolean {
-  return dueDate !== undefined && new Date(dueDate).getTime() < Date.now()
+  return dueDate !== undefined && isPast(dueDate)
+}
+
+export function isPast(isoDate: string): boolean {
+  return new Date(isoDate).getTime() <= Date.now()
 }

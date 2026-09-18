@@ -38,7 +38,7 @@ export function useBrowserNotifications(latest: AppNotification[] | undefined) {
       .slice(0, MAX_AT_ONCE)
       .forEach((notification) => {
         const bubble = new Notification(t(NOTIFICATION_META[notification.type].labelKey), {
-          body: notification.taskTitle ?? '',
+          body: notification.taskTitle ?? t('notifications.noTimeHint'),
           tag: `taskflow-${notification.id}`,
           icon: '/favicon.svg',
         })

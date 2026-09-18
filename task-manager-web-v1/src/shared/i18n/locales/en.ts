@@ -72,6 +72,10 @@ export const en: Dictionary<typeof fr> = {
     },
   },
   validation: {
+    reminder: {
+      required: 'Choose when to be reminded.',
+      needsDueDate: 'A relative reminder needs a due date.',
+    },
     fullName: { size: 'Name must be between 2 and 120 characters.' },
     email: {
       required: 'Email is required.',
@@ -108,6 +112,8 @@ export const en: Dictionary<typeof fr> = {
     deleted: 'Task deleted.',
     moved: '"{{title}}" moved to {{status}}.',
     late: '(overdue)',
+    reminder: 'Reminder on {{date}}',
+    reminderLabel: 'Reminder:',
     views: { label: 'Task view', table: 'Table', list: 'List', kanban: 'Kanban' },
     complete: {
       mark: 'Mark "{{title}}" as done',
@@ -204,6 +210,15 @@ export const en: Dictionary<typeof fr> = {
       status: 'Status',
       priority: 'Priority',
       dueDate: 'Due date',
+      reminder: 'Reminder',
+      reminderModes: {
+        NONE: 'No reminder',
+        HOUR_BEFORE: '1 hour before due date',
+        DAY_BEFORE: '1 day before due date',
+        CUSTOM: 'At a specific time…',
+      },
+      reminderAt: 'Reminder time',
+      reminderHint: 'A notification will appear in the bell at that time.',
       submitCreate: 'Create task',
       draftRestored: 'What you typed was kept while you signed back in: check it, then save.',
       discard: {
@@ -295,10 +310,30 @@ export const en: Dictionary<typeof fr> = {
       description: "You'll be notified here the day before and one hour before each due date, then if it's overdue.",
     },
     dueAt: 'Due: {{date}}',
+    remindAt: 'Reminder set for {{date}}',
+    noTimeHint: 'No time logged today: remember to fill in your timesheet.',
     types: {
       OVERDUE: 'Task overdue',
       DUE_IN_1H: 'Due in less than an hour',
       DUE_IN_24H: 'Due within 24 hours',
+      REMINDER: 'Reminder',
+      NO_TIME_LOGGED: 'Timesheet',
+    },
+    preferences: {
+      title: 'Notifications',
+      description: 'Choose which reminders appear in the bell.',
+      saved: 'Preferences saved.',
+      dueIn24h: { label: 'The day before', hint: 'When a due date is less than 24 hours away.' },
+      dueIn1h: { label: 'One hour before', hint: 'When a due date is less than an hour away.' },
+      overdue: { label: 'Overdue task', hint: 'When a due date has passed and the task is not done.' },
+      dailyTimeReminder: {
+        label: 'Time logging reminder',
+        hint: 'On weekdays at 5 pm, if no time was logged that day.',
+      },
+      browser: {
+        label: 'Browser notifications',
+        hint: 'Also show reminders outside the TaskFlow tab (on this device).',
+      },
     },
     browser: {
       pitch: 'Get notified even in another tab.',

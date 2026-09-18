@@ -24,7 +24,7 @@ import { useNavigate } from 'react-router-dom'
 
 /**
  * Cloche de l'en-tête : rappels générés par le serveur (échéance sous 24 h, sous 1 h,
- * retard), non lus en tête de badge. Choisir une notification la marque comme lue et
+ * retard, rappel choisi, saisie du temps), non lus en tête de badge. Choisir une notification la marque comme lue et
  * ouvre la tâche. Les nouvelles sont aussi relayées au système si l'utilisateur l'a permis.
  */
 export function NotificationBell() {
@@ -148,12 +148,14 @@ function NotificationItem({
           <span className={cn('text-sm', !notification.read && 'font-semibold')}>{t(meta.labelKey)}</span>
           <span className="text-muted-foreground shrink-0 text-xs">{formatRelative(notification.createdAt)}</span>
         </span>
-        {notification.taskTitle && (
-          <span className="text-foreground/90 block text-sm [overflow-wrap:anywhere]">{notification.taskTitle}</span>
-        )}
-        <span className="text-muted-foreground block text-xs">
-          {t('notifications.dueAt', { date: formatShortDateTime(notification.subjectAt) })}
+        <span className="text-foreground/90 block text-sm [overflow-wrap:anywhere]">
+          {notification.taskTitle ?? t('notifications.noTimeHint')}
         </span>
+        {meta.subjectKey && (
+          <span className="text-muted-foreground block text-xs">
+            {t(meta.subjectKey, { date: formatShortDateTime(notification.subjectAt) })}
+          </span>
+        )}
       </span>
       {!notification.read && (
         <span className="bg-primary mt-2 size-2 shrink-0 rounded-full">

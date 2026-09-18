@@ -72,6 +72,10 @@ export const fr = {
     },
   },
   validation: {
+    reminder: {
+      required: 'Choisir la date du rappel.',
+      needsDueDate: 'Un rappel relatif demande une échéance.',
+    },
     fullName: { size: 'Le nom doit contenir entre 2 et 120 caractères.' },
     email: {
       required: "L'email est obligatoire.",
@@ -108,6 +112,8 @@ export const fr = {
     deleted: 'Tâche supprimée.',
     moved: '« {{title}} » déplacée vers {{status}}.',
     late: '(en retard)',
+    reminder: 'Rappel le {{date}}',
+    reminderLabel: 'Rappel :',
     views: { label: 'Vue des tâches', table: 'Grille', list: 'Liste', kanban: 'Kanban' },
     complete: {
       mark: 'Marquer « {{title}} » comme terminée',
@@ -204,6 +210,15 @@ export const fr = {
       status: 'Statut',
       priority: 'Priorité',
       dueDate: 'Échéance',
+      reminder: 'Rappel',
+      reminderModes: {
+        NONE: 'Aucun rappel',
+        HOUR_BEFORE: '1 h avant l’échéance',
+        DAY_BEFORE: '1 jour avant l’échéance',
+        CUSTOM: 'À une date précise…',
+      },
+      reminderAt: 'Date du rappel',
+      reminderHint: 'Une notification apparaîtra dans la cloche à ce moment-là.',
       submitCreate: 'Créer la tâche',
       draftRestored: 'Votre saisie a été conservée pendant la reconnexion : vérifiez-la, puis enregistrez.',
       discard: {
@@ -295,10 +310,30 @@ export const fr = {
       description: 'Vous serez prévenu ici la veille et une heure avant chaque échéance, puis en cas de retard.',
     },
     dueAt: 'Échéance : {{date}}',
+    remindAt: 'Rappel prévu le {{date}}',
+    noTimeHint: 'Aucun temps saisi aujourd’hui : pensez à remplir votre feuille de temps.',
     types: {
       OVERDUE: 'Tâche en retard',
       DUE_IN_1H: 'Échéance dans moins d’une heure',
       DUE_IN_24H: 'Échéance dans moins de 24 h',
+      REMINDER: 'Rappel',
+      NO_TIME_LOGGED: 'Feuille de temps',
+    },
+    preferences: {
+      title: 'Notifications',
+      description: 'Choisir les rappels reçus dans la cloche.',
+      saved: 'Préférences enregistrées.',
+      dueIn24h: { label: 'La veille de l’échéance', hint: 'Quand une échéance arrive dans moins de 24 h.' },
+      dueIn1h: { label: 'Une heure avant', hint: 'Quand une échéance arrive dans moins d’une heure.' },
+      overdue: { label: 'Tâche en retard', hint: 'Quand une échéance est dépassée sans que la tâche soit terminée.' },
+      dailyTimeReminder: {
+        label: 'Rappel de saisie du temps',
+        hint: 'Les jours ouvrés à 17 h, si aucun temps n’a été saisi dans la journée.',
+      },
+      browser: {
+        label: 'Notifications du navigateur',
+        hint: 'Afficher aussi les rappels hors de l’onglet TaskFlow (sur cet appareil).',
+      },
     },
     browser: {
       pitch: 'Être prévenu même dans un autre onglet.',

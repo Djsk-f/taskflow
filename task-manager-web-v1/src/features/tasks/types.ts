@@ -13,6 +13,8 @@ export type Task = {
   status: TaskStatus
   priority: TaskPriority
   dueDate?: string
+  /** Rappel choisi par l'utilisateur (notification à cet instant). */
+  reminderAt?: string
   createdAt: string
   updatedAt: string
   /** Temps total saisi sur la tâche (feuilles de temps), en minutes. */
@@ -25,6 +27,7 @@ export type TaskPayload = {
   status: TaskStatus
   priority: TaskPriority
   dueDate?: string
+  reminderAt?: string
 }
 
 export type TaskStats = {

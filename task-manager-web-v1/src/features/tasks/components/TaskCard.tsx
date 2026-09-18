@@ -1,6 +1,7 @@
 import { TaskPriorityBadge } from '@/features/tasks/components/TaskBadges'
 import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButton'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
+import { TaskReminder } from '@/features/tasks/components/TaskReminder'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
@@ -64,8 +65,9 @@ function TaskCardContent({ task, ...actions }: TaskCardProps) {
       >
         {task.title}
       </button>
-      <div className="mt-1">
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
         <TaskDueDate task={task} compact />
+        <TaskReminder task={task} />
       </div>
       {task.description && (
         <p className="text-muted-foreground mt-2 line-clamp-3 text-xs leading-relaxed [overflow-wrap:anywhere]">

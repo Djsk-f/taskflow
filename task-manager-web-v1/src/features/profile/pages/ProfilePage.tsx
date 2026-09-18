@@ -1,4 +1,5 @@
 import { useAuth } from '@/features/auth/useAuth'
+import { NotificationPreferencesCard } from '@/features/notifications/components/NotificationPreferencesCard'
 import { ChangePasswordForm } from '@/features/profile/components/ChangePasswordForm'
 import { ProfileForm } from '@/features/profile/components/ProfileForm'
 import { AppShell } from '@/shared/components/layout/AppShell'
@@ -22,6 +23,10 @@ export function ProfilePage() {
 
         <Card title={t('profile.password.title')} description={t('profile.password.hint')}>
           <ChangePasswordForm />
+        </Card>
+
+        <Card title={t('notifications.preferences.title')} description={t('notifications.preferences.description')}>
+          <NotificationPreferencesCard />
         </Card>
       </div>
     </AppShell>
