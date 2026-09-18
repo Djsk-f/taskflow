@@ -76,14 +76,23 @@ bouton « retour » du navigateur fonctionne. Une échéance dépassée est sign
 | Node.js | **20.19+** ou **22.12+** (exigé par Vite 8) | `node --version` |
 | Docker + Docker Compose v2 | récent | `docker compose version` |
 
-Maven n'est pas nécessaire : le dépôt fournit le wrapper `mvnw`.
-Ports utilisés : **3306** (MySQL), **8080** (API), **5173** (interface).
+Pour le **lancement tout-Docker** (option A), seul Docker est nécessaire.
+Java et Node ne servent qu'au développement local (option B). Maven n'est pas nécessaire :
+le dépôt fournit le wrapper `mvnw`.
+
+Ports utilisés : **3000** (application en Docker), **3306** (MySQL), **8080** (API),
+**5173** (interface en développement).
 
 ---
 
 ## Installation et lancement
 
-Toutes les commandes partent de la racine du dépôt.
+Toutes les commandes partent de la racine du dépôt. Deux façons de lancer l'application :
+
+- **Option A — tout en Docker** : une commande, rien d'autre à installer. Pour essayer l'application.
+- **Option B — développement local** : API et interface lancées hors conteneur, avec rechargement à chaud.
+
+La configuration (étape 1) est commune aux deux.
 
 ### 1. Configurer l'environnement
 
@@ -101,11 +110,45 @@ puis remplacer la valeur de `JWT_SECRET` dans `.env` par le résultat.
 Les autres valeurs par défaut fonctionnent telles quelles en local.
 
 > L'API **refuse de démarrer** si `JWT_SECRET` est absent ou trop court : c'est voulu.
+> Sans Node, un secret s'obtient aussi avec `openssl rand -base64 48`.
 
-### 2. Démarrer MySQL
+### Option A — Tout en Docker
 
 ```bash
-docker compose up -d
+docker compose up -d --build
+```
+
+Le premier lancement construit les images (quelques minutes : téléchargement des
+dépendances Maven et npm). Les trois services démarrent dans l'ordre — MySQL, puis l'API
+une fois la base prête, puis l'interface une fois l'API prête :
+
+```bash
+docker compose ps        # mysql et api « healthy », web « Up »
+```
+
+Ouvrir **http://localhost:3000**, puis **créer un compte** : la base démarre vide.
+
+L'interface est servie par nginx, qui relaie aussi les appels `/api` vers l'API : pour le
+navigateur, tout vient de la même origine. L'API reste joignable directement sur
+http://localhost:8080.
+
+```bash
+docker compose logs -f api   # suivre les journaux de l'API
+docker compose down          # arrêter (les données sont conservées)
+docker compose down -v       # arrêter et effacer la base
+```
+
+> Un port est déjà pris sur votre machine ? Changer `WEB_PORT`, `SERVER_PORT` ou `DB_PORT`
+> dans `.env`.
+
+### Option B — Développement local
+
+Prérequis supplémentaires : JDK 21 et Node.js (voir [Prérequis](#prérequis)).
+
+#### 2. Démarrer MySQL seul
+
+```bash
+docker compose up -d mysql
 ```
 
 Attendre que le conteneur soit `healthy` (une trentaine de secondes au premier lancement) :
@@ -117,7 +160,7 @@ docker compose ps
 > Le port 3306 est déjà pris sur votre machine ? Mettre par exemple `DB_PORT=3307` dans
 > `.env` : Docker et l'API lisent tous deux cette variable.
 
-### 3. Démarrer l'API
+#### 3. Démarrer l'API
 
 ```bash
 cd task-manager-api-v1
@@ -131,7 +174,7 @@ Au premier démarrage, Flyway crée le schéma. Vérification :
 curl http://localhost:8080/actuator/health     # {"status":"UP", ...}
 ```
 
-### 4. Démarrer l'interface
+#### 4. Démarrer l'interface
 
 Dans un second terminal :
 
@@ -146,7 +189,7 @@ Ouvrir **http://localhost:5173**, puis **créer un compte** : la base démarre v
 > L'interface doit tourner sur le port 5173, seule origine autorisée par défaut
 > (`APP_CORS_ALLOWED_ORIGINS`). Si Vite annonce un autre port, libérer le 5173.
 
-### Build de production de l'interface
+#### Build de production de l'interface
 
 ```bash
 cd task-manager-web-v1
@@ -154,17 +197,13 @@ npm run build        # vérification TypeScript puis build dans dist/
 npm run preview      # sert le build sur http://localhost:4173 (ajouter cette origine à APP_CORS_ALLOWED_ORIGINS)
 ```
 
-### À propos de `docker-compose.yml`
-
-Il lance **MySQL uniquement**. L'API et l'interface se lancent localement (étapes 3 et 4),
-ce qui garde le rechargement à chaud pendant le développement. La conteneurisation
-complète est listée dans les [limites connues](#limites-connues).
-
 ---
 
 ## Variables d'environnement
 
 Un seul fichier `.env` à la racine, lu par Docker Compose, par l'API et par Vite.
+En option A, Compose transmet aux conteneurs les variables utiles ; l'API y joint MySQL
+par son nom de service (`mysql:3306`), quel que soit `DB_PORT`.
 
 | Variable | Défaut (`.env.example`) | Utilisée par | Rôle |
 |----------|-------------------------|--------------|------|
@@ -178,7 +217,8 @@ Un seul fichier `.env` à la racine, lu par Docker Compose, par l'API et par Vit
 | `JWT_SECRET` | *à générer* | API | Clé de signature HMAC, base64, 48 octets minimum |
 | `JWT_EXPIRATION_MS` | `86400000` | API | Durée de validité du jeton (24 h) |
 | `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API | Origines autorisées, séparées par des virgules |
-| `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Interface | URL de base de l'API |
+| `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Interface (option B) | URL de base de l'API ; l'image Docker utilise `/api/v1`, relayé par nginx |
+| `WEB_PORT` | `3000` | Docker | Port de l'application en option A |
 
 Seules les variables préfixées `VITE_` sont exposées au navigateur : les identifiants
 MySQL et le secret JWT ne peuvent pas se retrouver dans le bundle (vérifié sur le build).
@@ -259,10 +299,10 @@ curl -s "http://localhost:8080/api/v1/tasks?status=IN_PROGRESS&search=api" \
 
 ```
 taskflow/
-├── task-manager-api-v1/          API Spring Boot
-├── task-manager-web-v1/          Interface React
+├── task-manager-api-v1/          API Spring Boot (+ Dockerfile : build Maven, exécution JRE 21, utilisateur non root)
+├── task-manager-web-v1/          Interface React (+ Dockerfile et nginx.conf : fichiers statiques et relais /api)
 ├── docs/screenshots/             Captures du README
-├── docker-compose.yml            MySQL 8.4
+├── docker-compose.yml            MySQL 8.4, API, interface (nginx)
 └── .env.example                  Modèle de configuration partagé
 ```
 
@@ -321,6 +361,7 @@ de jetons de couleur.
 | **react-hook-form + Zod** | Le schéma Zod est l'unique source des règles de saisie, alignées sur la validation serveur | Validation dupliquée dans chaque formulaire |
 | **Filtres dans l'URL** | Liens partageables, historique du navigateur, aucun second état à synchroniser | État local de composant |
 | **Un seul `.env` racine** | Une seule source de configuration pour Docker, l'API et Vite | Un fichier par module |
+| **nginx relaie `/api` dans l'image de l'interface** | Même origine pour le navigateur : pas de CORS à ouvrir, un seul port exposé, image indépendante de l'adresse de l'API | Appeler l'API sur un autre port et élargir le CORS |
 
 ---
 
@@ -389,8 +430,9 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
 - **Pas de tests automatisés côté interface** : vérifications faites dans le navigateur.
   Piste : Vitest + Testing Library, puis Playwright pour les parcours.
 - **Bundle JavaScript en un seul fichier** (~690 kB, ~217 kB gzip). Piste : découpage par route.
-- **Docker Compose lance uniquement MySQL** ; l'API et l'interface ne sont pas conteneurisées.
 - **Non réalisés (bonus)** : vue Kanban avec glisser-déposer, mode sombre, statistiques,
-  intégration continue, déploiement, documentation Swagger. Les entrées « Kanban »,
+  intégration continue, déploiement, documentation Swagger.
+- **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
+  l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`. Les entrées « Kanban »,
   « Réglages » et « Mode sombre » sont visibles dans l'interface mais désactivées
   (« bientôt »), pour ne jamais présenter un contrôle qui ne fonctionne pas.
