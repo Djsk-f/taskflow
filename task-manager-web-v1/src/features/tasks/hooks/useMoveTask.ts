@@ -3,6 +3,7 @@ import { TASK_STATUS_META } from '@/features/tasks/taskMeta'
 import type { Task, TaskStatus } from '@/features/tasks/types'
 import { extractApiError } from '@/shared/api/extractApiError'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 /**
@@ -13,6 +14,7 @@ import { toast } from 'sonner'
 export function useMoveTask() {
   const { updateStatus } = useTaskMutations()
   const [pendingMoves, setPendingMoves] = useState<Record<number, TaskStatus>>({})
+  const { t } = useTranslation()
 
   const moveTask = async (task: Task, status: TaskStatus) => {
     if (task.status === status) {
@@ -21,7 +23,7 @@ export function useMoveTask() {
     setPendingMoves((moves) => ({ ...moves, [task.id]: status }))
     try {
       await updateStatus.mutateAsync({ id: task.id, status })
-      toast.success(`« ${task.title} » déplacée vers ${TASK_STATUS_META[status].label}.`)
+      toast.success(t('tasks.moved', { title: task.title, status: t(TASK_STATUS_META[status].labelKey) }))
     } catch (error) {
       toast.error(extractApiError(error).message)
     } finally {

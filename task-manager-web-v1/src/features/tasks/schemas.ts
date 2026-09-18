@@ -11,9 +11,9 @@ export const taskFormSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, 'Le titre est obligatoire.')
-    .max(150, 'Le titre ne peut pas dépasser 150 caractères.'),
-  description: z.string().trim().max(2000, 'La description ne peut pas dépasser 2000 caractères.'),
+    .min(1, 'validation.title.required')
+    .max(150, 'validation.title.size'),
+  description: z.string().trim().max(2000, 'validation.description.size'),
   status: z.enum(TASK_STATUSES),
   priority: z.enum(TASK_PRIORITIES),
   /** Valeur d'un champ `datetime-local`, vide si aucune échéance. */

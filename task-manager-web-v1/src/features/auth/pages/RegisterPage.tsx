@@ -8,12 +8,14 @@ import { Button } from '@/shared/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 export function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
   const [alert, setAlert] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -32,13 +34,13 @@ export function RegisterPage() {
 
   return (
     <AuthLayout
-      title="Créer un compte"
-      subtitle="Quelques secondes suffisent"
+      title={t('auth.register.title')}
+      subtitle={t('auth.register.subtitle')}
       footer={
         <>
-          Déjà inscrit ?{' '}
+          {t('auth.register.hasAccount')}{' '}
           <Link to="/login" className="text-primary font-medium hover:underline">
-            Se connecter
+            {t('auth.register.toLogin')}
           </Link>
         </>
       }
@@ -49,29 +51,29 @@ export function RegisterPage() {
         <FormTextField
           control={form.control}
           name="fullName"
-          label="Nom complet"
-          placeholder="Fidèle Kounga"
+          label={t('auth.fields.fullName')}
+          placeholder={t('auth.placeholders.fullName')}
           autoComplete="name"
         />
         <FormTextField
           control={form.control}
           name="email"
-          label="Email"
+          label={t('auth.fields.email')}
           type="email"
-          placeholder="vous@example.com"
+          placeholder={t('auth.placeholders.email')}
           autoComplete="email"
         />
         <FormTextField
           control={form.control}
           name="password"
-          label="Mot de passe"
+          label={t('auth.fields.passwordField')}
           type="password"
-          placeholder="8 caractères minimum"
+          placeholder={t('auth.placeholders.passwordField')}
           autoComplete="new-password"
         />
 
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Création…' : 'Créer mon compte'}
+          {form.formState.isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
         </Button>
       </form>
     </AuthLayout>

@@ -2,6 +2,7 @@ import { fieldControlProps } from '@/shared/components/form/fieldA11y'
 import { FormFieldShell } from '@/shared/components/form/FormFieldShell'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 export type SelectOption = { value: string; label: string }
 
@@ -20,6 +21,7 @@ export function FormSelectField<TValues extends FieldValues>({
   options,
   className,
 }: FormSelectFieldProps<TValues>) {
+  const { t } = useTranslation()
   return (
     <Controller
       control={control}
@@ -28,7 +30,7 @@ export function FormSelectField<TValues extends FieldValues>({
         <FormFieldShell name={name} label={label} error={fieldState.error} className={className}>
           <Select value={field.value ?? ''} onValueChange={field.onChange}>
             <SelectTrigger {...fieldControlProps(name, fieldState.error)} className="w-full">
-              <SelectValue placeholder="Choisir…" />
+              <SelectValue placeholder={t('common.choose')} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option) => (

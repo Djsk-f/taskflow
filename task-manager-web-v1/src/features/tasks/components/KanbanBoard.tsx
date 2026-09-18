@@ -19,8 +19,10 @@ import {
   type DragStartEvent,
   type KeyboardCoordinateGetter,
 } from '@dnd-kit/core'
+import type { TFunction } from 'i18next'
 import { useQueries } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /** Nombre maximal de cartes chargées par colonne (plafond serveur) ; le reste est dans le tableau. */
 const COLUMN_SIZE = 50
@@ -46,6 +48,7 @@ export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowIn
   })
   const columns = TASK_STATUSES.map((status, index) => ({ status, query: queries[index] }))
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const { t } = useTranslation()
 
   const sensors = useSensors(
     // Une distance minimale laisse passer les clics (titre, menu) sans démarrer de glissement.
@@ -91,7 +94,10 @@ export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowIn
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveTask(null)}
-      accessibility={{ announcements, screenReaderInstructions }}
+      accessibility={{
+        announcements: announcementsFor(t),
+        screenReaderInstructions: { draggable: t('tasks.kanban.instructions') },
+      }}
     >
       {/* Quatre colonnes égales à partir de 1280 px ; en dessous, défilement horizontal
           (une colonne presque pleine largeur sur mobile, avec aimantation). */}
@@ -145,19 +151,18 @@ const jumpBetweenColumns: KeyboardCoordinateGetter = (event, { context }) => {
   return target ? { x: target.left + (target.width - current.width) / 2, y: target.top } : undefined
 }
 
-const columnLabel = (id: string | number | undefined) =>
-  id && id in TASK_STATUS_META ? TASK_STATUS_META[id as TaskStatus].label : 'aucune colonne'
-
-const titleOf = (data: Record<string, unknown> | undefined) => (data?.task as Task | undefined)?.title ?? 'la tâche'
-
-const announcements: Announcements = {
-  onDragStart: ({ active }) => `« ${titleOf(active.data.current)} » saisie.`,
-  onDragOver: ({ active, over }) => `« ${titleOf(active.data.current)} » au-dessus de la colonne ${columnLabel(over?.id)}.`,
-  onDragEnd: ({ active, over }) => `« ${titleOf(active.data.current)} » déposée dans ${columnLabel(over?.id)}.`,
-  onDragCancel: ({ active }) => `Déplacement de « ${titleOf(active.data.current)} » annulé.`,
-}
-
-const screenReaderInstructions = {
-  draggable:
-    'Pour déplacer la carte, appuyer sur Espace, utiliser les flèches pour changer de colonne, puis Espace pour déposer ou Échap pour annuler.',
+/** Annonces du glisser-déposer pour les lecteurs d'écran, dans la langue de l'interface. */
+function announcementsFor(t: TFunction): Announcements {
+  const column = (id: string | number | undefined) =>
+    id && id in TASK_STATUS_META ? t(TASK_STATUS_META[id as TaskStatus].labelKey) : t('tasks.kanban.noColumn')
+  const title = (data: Record<string, unknown> | undefined) =>
+    (data?.task as Task | undefined)?.title ?? t('tasks.kanban.theTask')
+  return {
+    onDragStart: ({ active }) => t('tasks.kanban.announce.start', { title: title(active.data.current) }),
+    onDragOver: ({ active, over }) =>
+      t('tasks.kanban.announce.over', { title: title(active.data.current), column: column(over?.id) }),
+    onDragEnd: ({ active, over }) =>
+      t('tasks.kanban.announce.end', { title: title(active.data.current), column: column(over?.id) }),
+    onDragCancel: ({ active }) => t('tasks.kanban.announce.cancel', { title: title(active.data.current) }),
+  }
 }

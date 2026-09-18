@@ -19,6 +19,7 @@ const Toaster = (props: ToasterProps) => (
   <ThemedSonner
     className="toaster group"
     position="bottom-right"
+    richColors
     icons={{
       success: <CircleCheckIcon className="size-4" />,
       info: <InfoIcon className="size-4" />,
@@ -32,6 +33,19 @@ const Toaster = (props: ToasterProps) => (
         '--normal-text': 'var(--popover-foreground)',
         '--normal-border': 'var(--border)',
         '--border-radius': 'var(--radius)',
+        // Couleur selon le type de message, à partir des jetons (contrastes validés).
+        '--success-bg': 'color-mix(in oklab, var(--success) 12%, var(--popover))',
+        '--success-border': 'color-mix(in oklab, var(--success) 40%, var(--popover))',
+        '--success-text': 'var(--status-done-text)',
+        '--error-bg': 'color-mix(in oklab, var(--destructive) 12%, var(--popover))',
+        '--error-border': 'color-mix(in oklab, var(--destructive) 40%, var(--popover))',
+        '--error-text': 'var(--priority-high-text)',
+        '--warning-bg': 'color-mix(in oklab, var(--warning) 14%, var(--popover))',
+        '--warning-border': 'color-mix(in oklab, var(--warning) 45%, var(--popover))',
+        '--warning-text': 'var(--priority-medium-text)',
+        '--info-bg': 'color-mix(in oklab, var(--primary) 10%, var(--popover))',
+        '--info-border': 'color-mix(in oklab, var(--primary) 35%, var(--popover))',
+        '--info-text': 'var(--primary)',
       } as CSSProperties
     }
     {...props}

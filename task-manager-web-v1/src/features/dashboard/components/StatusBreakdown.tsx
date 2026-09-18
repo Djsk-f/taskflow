@@ -2,6 +2,7 @@ import { TASK_STATUS_META } from '@/features/tasks/taskMeta'
 import { TASK_STATUSES, type TaskStatus } from '@/features/tasks/types'
 import { cn } from '@/shared/lib/utils'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const percent = (value: number, total: number) => (total === 0 ? 0 : Math.round((value / total) * 100))
 
@@ -12,13 +13,15 @@ const percent = (value: number, total: number) => (total === 0 ? 0 : Math.round(
  */
 export function StatusBreakdown({ byStatus, total }: { byStatus: Record<TaskStatus, number>; total: number }) {
   const [active, setActive] = useState<TaskStatus | null>(null)
+  const { t } = useTranslation()
+  const label = (status: TaskStatus) => t(TASK_STATUS_META[status].labelKey)
   const segments = TASK_STATUSES.filter((status) => byStatus[status] > 0)
 
   return (
     <section className="bg-card shadow-card rounded-card border p-5">
-      <h2 className="font-semibold">Répartition par statut</h2>
+      <h2 className="font-semibold">{t('dashboard.status.title')}</h2>
       <p className="text-muted-foreground text-sm">
-        {total} tâche{total > 1 ? 's' : ''} au total
+        {t('dashboard.status.total', { count: total })}
       </p>
 
       <div className="relative mt-5">
@@ -27,8 +30,11 @@ export function StatusBreakdown({ byStatus, total }: { byStatus: Record<TaskStat
             role="status"
             className="bg-popover text-popover-foreground absolute -top-10 left-1/2 -translate-x-1/2 rounded-md border px-2.5 py-1 text-xs whitespace-nowrap shadow-md"
           >
-            <span className="font-medium">{TASK_STATUS_META[active].label}</span> : {byStatus[active]} (
-            {percent(byStatus[active], total)} %)
+            {t('dashboard.status.segment', {
+              label: label(active),
+              count: byStatus[active],
+              percent: percent(byStatus[active], total),
+            })}
           </div>
         )}
         <div className="flex h-5 w-full gap-0.5" onMouseLeave={() => setActive(null)}>
@@ -37,7 +43,11 @@ export function StatusBreakdown({ byStatus, total }: { byStatus: Record<TaskStat
               key={status}
               tabIndex={0}
               role="img"
-              aria-label={`${TASK_STATUS_META[status].label} : ${byStatus[status]} tâches, ${percent(byStatus[status], total)} %`}
+              aria-label={t('dashboard.status.segment', {
+                label: label(status),
+                count: byStatus[status],
+                percent: percent(byStatus[status], total),
+              })}
               onMouseEnter={() => setActive(status)}
               onFocus={() => setActive(status)}
               onBlur={() => setActive(null)}
@@ -60,10 +70,10 @@ export function StatusBreakdown({ byStatus, total }: { byStatus: Record<TaskStat
           <li key={status} className="flex items-start gap-2">
             <span className={cn('mt-1.5 size-2.5 shrink-0 rounded-full', TASK_STATUS_META[status].dotClassName)} />
             <div>
-              <p className="text-muted-foreground text-sm">{TASK_STATUS_META[status].label}</p>
+              <p className="text-muted-foreground text-sm">{label(status)}</p>
               <p className="font-semibold">
                 {byStatus[status]}
-                <span className="text-muted-foreground ml-1.5 text-xs font-normal">{percent(byStatus[status], total)} %</span>
+                <span className="text-muted-foreground ml-1.5 text-xs font-normal">{t('dashboard.status.percent', { percent: percent(byStatus[status], total) })}</span>
               </p>
             </div>
           </li>

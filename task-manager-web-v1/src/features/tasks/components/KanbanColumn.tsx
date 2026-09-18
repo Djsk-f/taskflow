@@ -13,6 +13,7 @@ import {
 import { Skeleton } from '@/shared/ui/skeleton'
 import { useDroppable } from '@dnd-kit/core'
 import { MoreHorizontalIcon, PlusIcon, Table2Icon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type KanbanColumnProps = {
   status: TaskStatus
@@ -35,6 +36,8 @@ export function KanbanColumn({
   ...actions
 }: KanbanColumnProps) {
   const meta = TASK_STATUS_META[status]
+  const { t } = useTranslation()
+  const label = t(meta.labelKey)
   const { setNodeRef, isOver } = useDroppable({ id: status })
   const hidden = total - tasks.length
 
@@ -42,7 +45,7 @@ export function KanbanColumn({
     <section aria-labelledby={`column-${status}`} className="flex min-w-0 snap-start flex-col">
       <header className="mb-3 flex items-center gap-1">
         <h2 id={`column-${status}`} className={cn('text-sm font-semibold', meta.textClassName)}>
-          {meta.label}
+          {label}
           <span className="text-muted-foreground ml-1 font-normal">({String(total).padStart(2, '0')})</span>
         </h2>
         <div className="ml-auto flex items-center">
@@ -51,20 +54,20 @@ export function KanbanColumn({
             size="icon"
             className="text-muted-foreground"
             onClick={() => onCreate(status)}
-            aria-label={`Créer une tâche dans « ${meta.label} »`}
+            aria-label={t('tasks.kanban.createIn', { column: label })}
           >
             <PlusIcon className="size-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label={`Options de la colonne « ${meta.label} »`}>
+              <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label={t('tasks.kanban.columnOptions', { column: label })}>
                 <MoreHorizontalIcon className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => onShowInTable(status)}>
                 <Table2Icon className="size-4" />
-                Voir dans le tableau
+                {t('tasks.kanban.showInTable')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -85,13 +88,13 @@ export function KanbanColumn({
 
         {!isLoading && tasks.length === 0 && (
           <p className="text-muted-foreground flex min-h-32 items-center justify-center rounded-xl border border-dashed text-xs">
-            Aucune tâche
+            {t('tasks.kanban.empty')}
           </p>
         )}
 
         {!isLoading && hidden > 0 && (
           <Button variant="ghost" className="text-muted-foreground" onClick={() => onShowInTable(status)}>
-            {hidden} autre{hidden > 1 ? 's' : ''} — voir dans le tableau
+            {t('tasks.kanban.more', { count: hidden })}
           </Button>
         )}
       </div>

@@ -2,6 +2,7 @@ import { taskApi } from '@/features/tasks/api/taskApi'
 import { TASKS_QUERY_KEY } from '@/features/tasks/hooks/useTasks'
 import type { TaskPayload, TaskStatus } from '@/features/tasks/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 /**
@@ -12,13 +13,14 @@ import { toast } from 'sonner'
  */
 export function useTaskMutations() {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
   const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] })
 
   const createTask = useMutation({
     mutationFn: (payload: TaskPayload) => taskApi.create(payload),
     onSuccess: () => {
       invalidateTasks()
-      toast.success('Tâche créée.')
+      toast.success(t('tasks.created'))
     },
   })
 
@@ -26,7 +28,7 @@ export function useTaskMutations() {
     mutationFn: ({ id, payload }: { id: number; payload: TaskPayload }) => taskApi.update(id, payload),
     onSuccess: () => {
       invalidateTasks()
-      toast.success('Tâche mise à jour.')
+      toast.success(t('tasks.updated'))
     },
   })
 
@@ -41,7 +43,7 @@ export function useTaskMutations() {
     mutationFn: (id: number) => taskApi.remove(id),
     onSuccess: () => {
       invalidateTasks()
-      toast.success('Tâche supprimée.')
+      toast.success(t('tasks.deleted'))
     },
   })
 

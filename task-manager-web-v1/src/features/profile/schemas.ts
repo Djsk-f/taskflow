@@ -5,27 +5,27 @@ export const profileSchema = z.object({
   fullName: z
     .string()
     .trim()
-    .min(2, 'Le nom doit contenir au moins 2 caractères.')
-    .max(120, 'Le nom ne peut pas dépasser 120 caractères.'),
+    .min(2, 'validation.fullName.size')
+    .max(120, 'validation.fullName.size'),
   email: z
     .string()
-    .min(1, "L'email est obligatoire.")
-    .email("Format d'email invalide.")
-    .max(180, "L'email ne peut pas dépasser 180 caractères."),
+    .min(1, 'validation.email.required')
+    .email('validation.email.format')
+    .max(180, 'validation.email.size'),
 })
 
 export const passwordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Le mot de passe actuel est obligatoire.'),
+    currentPassword: z.string().min(1, 'validation.currentPassword.required'),
     newPassword: z
       .string()
-      .min(8, 'Le nouveau mot de passe doit contenir au moins 8 caractères.')
-      .max(72, 'Le mot de passe ne peut pas dépasser 72 caractères.'),
+      .min(8, 'validation.password.size')
+      .max(72, 'validation.password.size'),
     confirmation: z.string(),
   })
   .refine((values) => values.newPassword === values.confirmation, {
     path: ['confirmation'],
-    message: 'La confirmation ne correspond pas au nouveau mot de passe.',
+    message: 'validation.password.confirmation',
   })
 
 export type ProfileValues = z.infer<typeof profileSchema>

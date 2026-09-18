@@ -11,6 +11,7 @@ import {
 } from '@/shared/ui/dropdown-menu'
 import { LogOutIcon, MenuIcon, UserRoundIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 type TopbarProps = {
@@ -23,6 +24,7 @@ type TopbarProps = {
 export function Topbar({ title, action, onOpenMenu }: TopbarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const initials = (user?.fullName ?? '')
     .split(' ')
@@ -33,7 +35,7 @@ export function Topbar({ title, action, onOpenMenu }: TopbarProps) {
 
   return (
     <header className="flex items-center gap-3 px-4 py-5 sm:px-8">
-      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMenu} aria-label="Ouvrir le menu">
+      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMenu} aria-label={t('nav.open')}>
         <MenuIcon className="size-5" />
       </Button>
 
@@ -47,8 +49,8 @@ export function Topbar({ title, action, onOpenMenu }: TopbarProps) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="bg-success text-primary-foreground focus-visible:ring-ring flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-            aria-label="Menu utilisateur"
+            className="bg-status-done text-primary-foreground focus-visible:ring-ring flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            aria-label={t('user.menu')}
           >
             {initials || <UserRoundIcon className="size-4" />}
           </button>
@@ -61,11 +63,11 @@ export function Topbar({ title, action, onOpenMenu }: TopbarProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => navigate('/profile')}>
             <UserRoundIcon className="size-4" />
-            Mon profil
+            {t('user.profile')}
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onSelect={logout}>
             <LogOutIcon className="size-4" />
-            Se déconnecter
+            {t('user.logout')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

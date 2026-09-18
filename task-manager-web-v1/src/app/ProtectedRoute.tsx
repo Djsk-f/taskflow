@@ -2,15 +2,17 @@ import { useAuth } from '@/features/auth/useAuth'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import { FullPageLoader } from '@/shared/components/feedback/FullPageLoader'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, useLocation } from 'react-router-dom'
 
 /** Refus par défaut côté client, en écho à la règle du serveur (INV-11). */
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isRestoring, restoreError, retryRestore } = useAuth()
   const location = useLocation()
+  const { t } = useTranslation()
 
   if (isRestoring) {
-    return <FullPageLoader label="Restauration de la session…" />
+    return <FullPageLoader label={t('auth.restoring')} />
   }
 
   // Session impossible à vérifier : ni connecté, ni déconnecté. Rediriger vers /login

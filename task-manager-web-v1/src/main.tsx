@@ -1,6 +1,7 @@
 import { App } from '@/App'
 import { queryClient } from '@/app/queryClient'
 import { AuthProvider } from '@/features/auth/AuthContext'
+import '@/shared/i18n/i18n'
 import '@/styles/index.css'
 import { ThemeProvider } from '@/shared/theme/ThemeProvider'
 import { Toaster } from '@/shared/ui/sonner'

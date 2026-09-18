@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 /** Suppression (EX-06) : toujours confirmée, jamais en un seul clic. */
@@ -22,6 +23,7 @@ export function DeleteTaskDialog({
   onClose: () => void
 }) {
   const { deleteTask } = useTaskMutations()
+  const { t } = useTranslation()
 
   const confirm = async () => {
     if (!task) {
@@ -39,15 +41,15 @@ export function DeleteTaskDialog({
     <AlertDialog open={task !== null} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Supprimer cette tâche ?</AlertDialogTitle>
+          <AlertDialogTitle>{t('tasks.delete.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            « {task?.title} » sera définitivement supprimée. Cette action est irréversible.
+            {t('tasks.delete.description', { title: task?.title ?? '' })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={confirm} disabled={deleteTask.isPending}>
-            {deleteTask.isPending ? 'Suppression…' : 'Supprimer'}
+            {deleteTask.isPending ? t('tasks.delete.pending') : t('tasks.delete.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

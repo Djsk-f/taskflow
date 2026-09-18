@@ -2,6 +2,7 @@ import { SidebarContent } from '@/shared/components/layout/Sidebar'
 import { Topbar } from '@/shared/components/layout/Topbar'
 import { Sheet, SheetContent, SheetTitle } from '@/shared/ui/sheet'
 import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type AppShellProps = {
   title: string
@@ -18,6 +19,7 @@ type AppShellProps = {
  */
 export function AppShell({ title, action, toolbar, children }: AppShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { t } = useTranslation()
 
   return (
     <div className="flex min-h-screen">
@@ -27,7 +29,7 @@ export function AppShell({ title, action, toolbar, children }: AppShellProps) {
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="w-64 p-0">
-          <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
+          <SheetTitle className="sr-only">{t('nav.drawer')}</SheetTitle>
           <SidebarContent onNavigate={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>

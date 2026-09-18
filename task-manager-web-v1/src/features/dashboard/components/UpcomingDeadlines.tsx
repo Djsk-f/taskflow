@@ -4,18 +4,20 @@ import { useDueTasks } from '@/features/tasks/hooks/useTaskInsights'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { CalendarCheckIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const WEEK_HOURS = 7 * 24
 
 /** Échéances en retard ou dans les 7 prochains jours ; chaque ligne mène à la tâche. */
 export function UpcomingDeadlines() {
   const { data, isPending, isError } = useDueTasks(WEEK_HOURS)
+  const { t } = useTranslation()
 
   return (
     <section className="bg-card shadow-card rounded-card border">
       <div className="p-5 pb-3">
-        <h2 className="font-semibold">Échéances de la semaine</h2>
-        <p className="text-muted-foreground text-sm">En retard ou à rendre dans les 7 prochains jours</p>
+        <h2 className="font-semibold">{t('dashboard.deadlines.title')}</h2>
+        <p className="text-muted-foreground text-sm">{t('dashboard.deadlines.subtitle')}</p>
       </div>
 
       {isPending && (
@@ -26,12 +28,12 @@ export function UpcomingDeadlines() {
         </div>
       )}
 
-      {isError && <p className="text-destructive px-5 pb-5 text-sm">Échéances indisponibles.</p>}
+      {isError && <p className="text-destructive px-5 pb-5 text-sm">{t('dashboard.deadlines.unavailable')}</p>}
 
       {data && data.length === 0 && (
         <p className="text-muted-foreground flex items-center gap-2 px-5 pb-5 text-sm">
           <CalendarCheckIcon className="text-success size-4" />
-          Aucune échéance cette semaine.
+          {t('dashboard.deadlines.empty')}
         </p>
       )}
 

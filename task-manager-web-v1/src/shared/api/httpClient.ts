@@ -1,5 +1,6 @@
 import { tokenStorage } from '@/features/auth/tokenStorage'
 import { env } from '@/shared/config/env'
+import { currentLanguage } from '@/shared/i18n/i18n'
 import type { ApiErrorResponse } from '@/shared/types/api'
 import axios, { type AxiosError } from 'axios'
 
@@ -25,6 +26,8 @@ httpClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // L'API répond dans la langue de l'interface (messages d'erreur, validation).
+  config.headers['Accept-Language'] = currentLanguage()
   return config
 })
 

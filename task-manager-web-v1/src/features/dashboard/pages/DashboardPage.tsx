@@ -10,14 +10,16 @@ import { AppShell } from '@/shared/components/layout/AppShell'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { AlarmClockIcon, CalendarRangeIcon, CircleCheckBigIcon, LayoutGridIcon, ListChecksIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 /** Tableau de bord (bonus B-03) : l'entrée « Dashboard » de la capture. */
 export function DashboardPage() {
   const { data, isPending, isError, error, refetch } = useTaskStats()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   return (
-    <AppShell title="Tableau de bord">
+    <AppShell title={t('dashboard.title')}>
       {isPending && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
@@ -32,9 +34,9 @@ export function DashboardPage() {
         <section className="bg-card shadow-card rounded-card border">
           <EmptyState
             icon={LayoutGridIcon}
-            title="Rien à analyser pour l'instant"
-            description="Créez vos premières tâches : leur avancement apparaîtra ici."
-            action={{ label: 'Aller aux tâches', onClick: () => navigate('/tasks') }}
+            title={t('dashboard.empty.title')}
+            description={t('dashboard.empty.description')}
+            action={{ label: t('dashboard.empty.action'), onClick: () => navigate('/tasks') }}
           />
         </section>
       )}
@@ -42,24 +44,29 @@ export function DashboardPage() {
       {data && data.total > 0 && (
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatTile label="Tâches" value={data.total} hint="Tous statuts confondus" icon={ListChecksIcon} />
             <StatTile
-              label="Terminées"
+              label={t('dashboard.tiles.total')}
+              value={data.total}
+              hint={t('dashboard.tiles.totalHint')}
+              icon={ListChecksIcon}
+            />
+            <StatTile
+              label={t('dashboard.tiles.done')}
               value={data.byStatus.DONE}
-              hint={`${Math.round((data.byStatus.DONE / data.total) * 100)} % du total`}
+              hint={t('dashboard.tiles.doneHint', { percent: Math.round((data.byStatus.DONE / data.total) * 100) })}
               icon={CircleCheckBigIcon}
             />
             <StatTile
-              label="En retard"
+              label={t('dashboard.tiles.overdue')}
               value={data.overdue}
-              hint={data.overdue > 0 ? 'Échéance dépassée, non terminées' : 'Aucun retard'}
+              hint={data.overdue > 0 ? t('dashboard.tiles.overdueHint') : t('dashboard.tiles.noOverdue')}
               icon={AlarmClockIcon}
               alert={data.overdue > 0}
             />
             <StatTile
-              label="À rendre cette semaine"
+              label={t('dashboard.tiles.week')}
               value={data.dueThisWeek}
-              hint="Dans les 7 prochains jours"
+              hint={t('dashboard.tiles.weekHint')}
               icon={CalendarRangeIcon}
             />
           </div>

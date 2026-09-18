@@ -4,6 +4,7 @@ import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/compon
 import type { Task } from '@/features/tasks/types'
 import { cn } from '@/shared/lib/utils'
 import { useDraggable } from '@dnd-kit/core'
+import { useTranslation } from 'react-i18next'
 
 type TaskCardProps = { task: Task } & TaskActionHandlers
 
@@ -17,13 +18,14 @@ const CARD_CLASS =
  */
 export function TaskCard({ task, ...actions }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id, data: { task } })
+  const { t } = useTranslation()
 
   return (
     <article
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      aria-roledescription="carte déplaçable"
+      aria-roledescription={t('tasks.kanban.draggable')}
       aria-label={task.title}
       className={cn(
         CARD_CLASS,

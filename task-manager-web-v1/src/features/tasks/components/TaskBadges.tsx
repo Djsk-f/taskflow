@@ -1,6 +1,7 @@
 import { TASK_PRIORITY_META, TASK_STATUS_META, type TaskMeta } from '@/features/tasks/taskMeta'
 import type { TaskPriority, TaskStatus } from '@/features/tasks/types'
 import { cn } from '@/shared/lib/utils'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Les deux badges dérivent entièrement de taskMeta : ajouter un statut ne demande aucune
@@ -15,6 +16,7 @@ export function TaskPriorityBadge({ priority }: { priority: TaskPriority }) {
 }
 
 function MetaBadge({ meta }: { meta: TaskMeta }) {
+  const { t } = useTranslation()
   const Icon = meta.icon
   return (
     <span
@@ -24,7 +26,7 @@ function MetaBadge({ meta }: { meta: TaskMeta }) {
       )}
     >
       <Icon className="size-3.5" />
-      {meta.label}
+      {t(meta.labelKey)}
     </span>
   )
 }

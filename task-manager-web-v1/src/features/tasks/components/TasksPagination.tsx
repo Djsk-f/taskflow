@@ -1,5 +1,6 @@
 import { Button } from '@/shared/ui/button'
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type TasksPaginationProps = {
   page: number
@@ -23,23 +24,24 @@ export function TasksPagination({
 }: TasksPaginationProps) {
   const from = totalElements === 0 ? 0 : page * size + 1
   const to = Math.min((page + 1) * size, totalElements)
+  const { t } = useTranslation()
 
   return (
     <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
       <p className="text-muted-foreground text-sm">
-        {from}–{to} sur {totalElements} tâche{totalElements > 1 ? 's' : ''}
+        {t('tasks.pagination.range', { from, to, count: totalElements })}
       </p>
 
       <div className="flex items-center gap-2">
         <Button variant="secondary" disabled={first} onClick={() => onPageChange(page - 1)}>
           <ChevronLeftIcon className="size-4" />
-          Précédent
+          {t('tasks.pagination.previous')}
         </Button>
         <span className="text-muted-foreground px-1 text-sm">
-          Page {page + 1} / {Math.max(totalPages, 1)}
+          {t('tasks.pagination.page', { page: page + 1, pages: Math.max(totalPages, 1) })}
         </span>
         <Button variant="secondary" disabled={last} onClick={() => onPageChange(page + 1)}>
-          Suivant
+          {t('tasks.pagination.next')}
           <ChevronRightIcon className="size-4" />
         </Button>
       </div>

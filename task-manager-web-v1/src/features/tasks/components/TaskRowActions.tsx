@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu'
 import { MoreHorizontalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /** Actions possibles sur une tâche, transmises telles quelles par chaque vue. */
 export type TaskActionHandlers = {
@@ -23,33 +24,34 @@ export type TaskActionHandlers = {
  * « Déplacer vers » est l'alternative clavier et tactile au glisser-déposer.
  */
 export function TaskRowActions({ task, onEdit, onDelete, onMove }: { task: Task } & TaskActionHandlers) {
+  const { t } = useTranslation()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={`Actions sur « ${task.title} »`}>
+        <Button variant="ghost" size="icon" aria-label={t('tasks.actions.label', { title: task.title })}>
           <MoreHorizontalIcon className="size-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem onSelect={() => onEdit(task)}>
           <PencilIcon className="size-4" />
-          Modifier
+          {t('tasks.actions.edit')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">Déplacer vers</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">{t('tasks.actions.moveTo')}</DropdownMenuLabel>
         {TASK_STATUSES.filter((status) => status !== task.status).map((status) => {
           const meta = TASK_STATUS_META[status]
           return (
             <DropdownMenuItem key={status} onSelect={() => onMove(task, status)}>
               <meta.icon className="size-4" />
-              {meta.label}
+              {t(meta.labelKey)}
             </DropdownMenuItem>
           )
         })}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => onDelete(task)}>
           <Trash2Icon className="size-4" />
-          Supprimer
+          {t('tasks.actions.delete')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

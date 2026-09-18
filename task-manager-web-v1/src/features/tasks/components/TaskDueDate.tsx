@@ -2,6 +2,7 @@ import type { Task } from '@/features/tasks/types'
 import { formatDateTime, formatShortDateTime, isOverdue } from '@/shared/lib/formatDate'
 import { cn } from '@/shared/lib/utils'
 import { CalendarClockIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Échéance d'une tâche, rendue au même endroit pour le tableau, la liste et les cartes.
@@ -9,6 +10,8 @@ import { CalendarClockIcon } from 'lucide-react'
  * `compact` : format court et couleur primaire des cartes Kanban, comme la capture.
  */
 export function TaskDueDate({ task, compact = false }: { task: Task; compact?: boolean }) {
+  // Abonnement à la langue : le format de date change avec elle.
+  const { t } = useTranslation()
   if (!task.dueDate) {
     return compact ? null : <span className="text-muted-foreground text-sm">—</span>
   }
@@ -23,7 +26,7 @@ export function TaskDueDate({ task, compact = false }: { task: Task; compact?: b
     >
       <CalendarClockIcon className="size-3.5" />
       {compact ? formatShortDateTime(task.dueDate) : formatDateTime(task.dueDate)}
-      {late && <span className="sr-only">(en retard)</span>}
+      {late && <span className="sr-only">{t('tasks.late')}</span>}
     </span>
   )
 }

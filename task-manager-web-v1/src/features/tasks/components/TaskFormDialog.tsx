@@ -1,6 +1,6 @@
 import { useTaskMutations } from '@/features/tasks/hooks/useTaskMutations'
 import { taskFormSchema, toTaskPayload, type TaskFormValues } from '@/features/tasks/schemas'
-import { priorityOptions, statusOptions } from '@/features/tasks/taskMeta'
+import { useTaskOptions } from '@/features/tasks/hooks/useTaskOptions'
 import type { Task, TaskStatus } from '@/features/tasks/types'
 import { FormAlert } from '@/shared/components/feedback/FormAlert'
 import { applyApiErrorToForm } from '@/shared/components/form/applyApiErrorToForm'
@@ -20,6 +20,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 const EMPTY_VALUES: TaskFormValues = {
   title: '',
@@ -45,6 +46,8 @@ type TaskFormDialogProps = {
 export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO' }: TaskFormDialogProps) {
   const { createTask, updateTask } = useTaskMutations()
   const [alert, setAlert] = useState<string | null>(null)
+  const { t } = useTranslation()
+  const { statusOptions, priorityOptions } = useTaskOptions()
   const isEditing = task !== undefined
 
   const form = useForm<TaskFormValues>({
@@ -98,38 +101,42 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Modifier la tâche' : 'Nouvelle tâche'}</DialogTitle>
+          <DialogTitle>{isEditing ? t('tasks.form.editTitle') : t('tasks.form.createTitle')}</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Mettre à jour les informations de cette tâche.'
-              : 'Décrire la tâche à réaliser. Seul le titre est obligatoire.'}
+              ? t('tasks.form.editDescription')
+              : t('tasks.form.createDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {alert && <FormAlert message={alert} />}
 
-          <FormTextField control={form.control} name="title" label="Titre" placeholder="Ex. Charte graphique" />
+          <FormTextField control={form.control} name="title" label={t('tasks.form.title')} placeholder={t('tasks.form.titlePlaceholder')} />
           <FormTextareaField
             control={form.control}
             name="description"
-            label="Description"
-            placeholder="Détails, contexte, critères d'acceptation…"
+            label={t('tasks.form.description')}
+            placeholder={t('tasks.form.descriptionPlaceholder')}
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormSelectField control={form.control} name="status" label="Statut" options={statusOptions} />
-            <FormSelectField control={form.control} name="priority" label="Priorité" options={priorityOptions} />
+            <FormSelectField control={form.control} name="status" label={t('tasks.form.status')} options={statusOptions} />
+            <FormSelectField control={form.control} name="priority" label={t('tasks.form.priority')} options={priorityOptions} />
           </div>
 
-          <FormTextField control={form.control} name="dueDate" label="Échéance" type="datetime-local" />
+          <FormTextField control={form.control} name="dueDate" label={t('tasks.form.dueDate')} type="datetime-local" />
 
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'Enregistrement…' : isEditing ? 'Enregistrer' : 'Créer la tâche'}
+              {form.formState.isSubmitting
+                ? t('common.saving')
+                : isEditing
+                  ? t('common.save')
+                  : t('tasks.form.submitCreate')}
             </Button>
           </DialogFooter>
         </form>

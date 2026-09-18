@@ -27,6 +27,7 @@ import { Button } from '@/shared/ui/button'
 import { ListChecksIcon, PlusIcon, SearchXIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -49,6 +50,7 @@ export function TasksPage() {
   const [createStatus, setCreateStatus] = useState<TaskStatus>('TODO')
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
   const { moveTask, pendingMoves } = useMoveTask()
+  const { t } = useTranslation()
 
   /** Filtres et vue vivent dans l'URL ; un changement de filtre ramène en page 1. */
   const navigate = (nextFilters: TaskFilters, nextView: TaskView = view) => {
@@ -91,28 +93,28 @@ export function TasksPage() {
 
   return (
     <AppShell
-      title="Tâches"
+      title={t('tasks.title')}
       action={
-        <Button onClick={() => openCreateForm()}>
+        <Button onClick={() => openCreateForm()} aria-label={t('tasks.create')}>
           <PlusIcon className="size-4" />
-          <span className="hidden sm:inline">Créer une tâche</span>
+          <span className="hidden sm:inline">{t('tasks.create')}</span>
         </Button>
       }
-      toolbar={
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <TaskViewTabs view={view} onChange={changeView} />
-          <TaskFiltersBar
-            searchDraft={searchDraft}
-            onSearchDraftChange={setSearchDraft}
-            status={filters.status}
-            onStatusChange={(status) => applyFilters({ status })}
-            priority={filters.priority}
-            onPriorityChange={(priority) => applyFilters({ priority })}
-            showStatus={view !== 'kanban'}
-          />
-        </div>
-      }
+      toolbar={<TaskViewTabs view={view} onChange={changeView} />}
     >
+      <div className="mb-6">
+        <TaskFiltersBar
+          searchDraft={searchDraft}
+          onSearchDraftChange={setSearchDraft}
+          status={filters.status}
+          onStatusChange={(status) => applyFilters({ status })}
+          priority={filters.priority}
+          onPriorityChange={(priority) => applyFilters({ priority })}
+          onClearFilters={() => applyFilters({ priority: null, status: null })}
+          showStatus={view !== 'kanban'}
+        />
+      </div>
+
       {view === 'kanban' ? (
         <KanbanBoard
           search={filters.search}
@@ -151,6 +153,7 @@ type PaginatedTasksProps = {
 /** Vues Tableau et Liste : mêmes données paginées, mêmes quatre états, rendu différent. */
 function PaginatedTasks({ view, filters, actions, onPageChange, onCreate, onResetFilters }: PaginatedTasksProps) {
   const { data, isPending, isError, error, refetch } = useTasks(filters)
+  const { t } = useTranslation()
 
   return (
     <section className="bg-card shadow-card rounded-card overflow-hidden border">
@@ -161,18 +164,18 @@ function PaginatedTasks({ view, filters, actions, onPageChange, onCreate, onRese
       {data && data.content.length === 0 && !hasActiveFilters(filters) && (
         <EmptyState
           icon={ListChecksIcon}
-          title="Aucune tâche pour l'instant"
-          description="Créez votre première tâche pour commencer à organiser votre travail."
-          action={{ label: 'Créer une tâche', onClick: onCreate }}
+          title={t('tasks.empty.title')}
+          description={t('tasks.empty.description')}
+          action={{ label: t('tasks.create'), onClick: onCreate }}
         />
       )}
 
       {data && data.content.length === 0 && hasActiveFilters(filters) && (
         <EmptyState
           icon={SearchXIcon}
-          title="Aucun résultat"
-          description="Aucune tâche ne correspond à cette recherche ou à ces filtres."
-          action={{ label: 'Réinitialiser les filtres', onClick: onResetFilters }}
+          title={t('tasks.noResults.title')}
+          description={t('tasks.noResults.description')}
+          action={{ label: t('tasks.noResults.reset'), onClick: onResetFilters }}
         />
       )}
 

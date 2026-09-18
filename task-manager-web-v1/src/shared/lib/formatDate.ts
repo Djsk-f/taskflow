@@ -1,15 +1,19 @@
-const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-})
+import { currentLanguage } from '@/shared/i18n/i18n'
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+/** Formateurs Intl mis en cache par langue : créer un Intl.DateTimeFormat coûte cher. */
+const formatters = new Map<string, Intl.DateTimeFormat>()
 
-const shortDateFormatter = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' })
-const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' })
+function formatter(name: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  // Anglais au format américain (« 09/24 · 6:00 PM »), comme la capture de référence.
+  const locale = currentLanguage() === 'en' ? 'en-US' : 'fr-FR'
+  const key = `${locale}:${name}`
+  let cached = formatters.get(key)
+  if (!cached) {
+    cached = new Intl.DateTimeFormat(locale, options)
+    formatters.set(key, cached)
+  }
+  return cached
+}
 
 /**
  * Formatage et conversion des dates, sans dépendance : `Intl` fait le travail (INV-24).
@@ -17,17 +21,24 @@ const timeFormatter = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute
  * formulaire vivent dans le fuseau du navigateur.
  */
 export function formatDateTime(isoDate: string): string {
-  return dateTimeFormatter.format(new Date(isoDate))
+  return formatter('dateTime', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(isoDate))
 }
 
 export function formatDate(isoDate: string): string {
-  return dateFormatter.format(new Date(isoDate))
+  return formatter('date', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(isoDate))
 }
 
 /** Format compact des cartes Kanban, comme la capture : « 24/09 · 18:00 ». */
 export function formatShortDateTime(isoDate: string): string {
   const date = new Date(isoDate)
-  return `${shortDateFormatter.format(date)} · ${timeFormatter.format(date)}`
+  const day = formatter('shortDate', { day: '2-digit', month: '2-digit' }).format(date)
+  return `${day} · ${formatter('time', { hour: '2-digit', minute: '2-digit' }).format(date)}`
 }
 
 /** ISO → valeur d'un `<input type="datetime-local">` (heure locale, sans fuseau). */

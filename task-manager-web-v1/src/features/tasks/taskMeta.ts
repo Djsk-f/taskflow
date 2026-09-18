@@ -1,5 +1,4 @@
 import type { TaskPriority, TaskStatus } from '@/features/tasks/types'
-import { TASK_PRIORITIES, TASK_STATUSES } from '@/features/tasks/types'
 import {
   ArrowDownIcon,
   ArrowRightIcon,
@@ -22,7 +21,8 @@ import {
  * est ajouté au type sans être décrit — au lieu d'un trou silencieux à l'exécution.
  */
 export type TaskMeta = {
-  label: string
+  /** Clé de traduction du libellé (fr/en) : `t(meta.labelKey)`. */
+  labelKey: `status.${TaskStatus}` | `priority.${TaskPriority}`
   badgeClassName: string
   dotClassName: string
   /** Couleur du titre de colonne Kanban (statuts) — texte seul. */
@@ -32,28 +32,28 @@ export type TaskMeta = {
 
 export const TASK_STATUS_META = {
   TODO: {
-    label: 'À faire',
+    labelKey: 'status.TODO',
     badgeClassName: 'bg-status-todo/10 text-status-todo-text',
     dotClassName: 'bg-status-todo',
     textClassName: 'text-foreground',
     icon: CircleDashedIcon,
   },
   IN_PROGRESS: {
-    label: 'En cours',
+    labelKey: 'status.IN_PROGRESS',
     badgeClassName: 'bg-status-progress/10 text-status-progress-text',
     dotClassName: 'bg-status-progress',
     textClassName: 'text-status-progress-text',
     icon: TimerIcon,
   },
   IN_REVIEW: {
-    label: 'En revue',
+    labelKey: 'status.IN_REVIEW',
     badgeClassName: 'bg-status-review/10 text-status-review-text',
     dotClassName: 'bg-status-review',
     textClassName: 'text-status-review-text',
     icon: EyeIcon,
   },
   DONE: {
-    label: 'Terminé',
+    labelKey: 'status.DONE',
     badgeClassName: 'bg-status-done/10 text-status-done-text',
     dotClassName: 'bg-status-done',
     textClassName: 'text-status-done-text',
@@ -63,28 +63,24 @@ export const TASK_STATUS_META = {
 
 export const TASK_PRIORITY_META = {
   LOW: {
-    label: 'Basse',
+    labelKey: 'priority.LOW',
     badgeClassName: 'bg-priority-low/10 text-priority-low-text',
     dotClassName: 'bg-priority-low',
     textClassName: 'text-priority-low-text',
     icon: ArrowDownIcon,
   },
   MEDIUM: {
-    label: 'Moyenne',
+    labelKey: 'priority.MEDIUM',
     badgeClassName: 'bg-priority-medium/10 text-priority-medium-text',
     dotClassName: 'bg-priority-medium',
     textClassName: 'text-priority-medium-text',
     icon: ArrowRightIcon,
   },
   HIGH: {
-    label: 'Haute',
+    labelKey: 'priority.HIGH',
     badgeClassName: 'bg-priority-high/10 text-priority-high-text',
     dotClassName: 'bg-priority-high',
     textClassName: 'text-priority-high-text',
     icon: ArrowUpIcon,
   },
 } as const satisfies Record<TaskPriority, TaskMeta>
-
-/** Options prêtes pour un `<Select>`, dérivées des tables ci-dessus. */
-export const statusOptions = TASK_STATUSES.map((value) => ({ value, label: TASK_STATUS_META[value].label }))
-export const priorityOptions = TASK_PRIORITIES.map((value) => ({ value, label: TASK_PRIORITY_META[value].label }))

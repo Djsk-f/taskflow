@@ -7,6 +7,7 @@ import { Button } from '@/shared/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 const EMPTY: PasswordValues = { currentPassword: '', newPassword: '', confirmation: '' }
@@ -14,6 +15,7 @@ const EMPTY: PasswordValues = { currentPassword: '', newPassword: '', confirmati
 /** Changement de mot de passe (EX-03). Le serveur vérifie le mot de passe actuel. */
 export function ChangePasswordForm() {
   const [alert, setAlert] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const form = useForm<PasswordValues>({
     resolver: zodResolver(passwordSchema),
@@ -28,7 +30,7 @@ export function ChangePasswordForm() {
         newPassword: values.newPassword,
       })
       form.reset(EMPTY)
-      toast.success('Mot de passe modifié.')
+      toast.success(t('profile.password.changed'))
     } catch (error) {
       setAlert(applyApiErrorToForm(error, form.setError))
     }
@@ -41,27 +43,27 @@ export function ChangePasswordForm() {
       <FormTextField
         control={form.control}
         name="currentPassword"
-        label="Mot de passe actuel"
+        label={t('profile.password.current')}
         type="password"
         autoComplete="current-password"
       />
       <FormTextField
         control={form.control}
         name="newPassword"
-        label="Nouveau mot de passe"
+        label={t('profile.password.new')}
         type="password"
         autoComplete="new-password"
       />
       <FormTextField
         control={form.control}
         name="confirmation"
-        label="Confirmer le nouveau mot de passe"
+        label={t('profile.password.confirm')}
         type="password"
         autoComplete="new-password"
       />
 
       <Button type="submit" disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting ? 'Modification…' : 'Modifier le mot de passe'}
+        {form.formState.isSubmitting ? t('profile.password.submitting') : t('profile.password.submit')}
       </Button>
     </form>
   )

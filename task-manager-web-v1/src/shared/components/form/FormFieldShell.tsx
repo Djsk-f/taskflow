@@ -1,8 +1,10 @@
 import { fieldErrorId } from '@/shared/components/form/fieldA11y'
+import { translateMessage } from '@/shared/i18n/translateMessage'
 import { cn } from '@/shared/lib/utils'
 import { Label } from '@/shared/ui/label'
 import type { ReactNode } from 'react'
 import type { FieldError } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Rendu unique d'un champ de formulaire : libellé, contrôle, message d'erreur (INV-21).
@@ -22,13 +24,14 @@ export function FormFieldShell({
   className?: string
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <div className={cn('space-y-1.5', className)}>
       <Label htmlFor={name}>{label}</Label>
       {children}
       {error && (
         <p id={fieldErrorId(name)} className="text-destructive text-sm">
-          {error.message}
+          {translateMessage(t, error.message)}
         </p>
       )}
     </div>

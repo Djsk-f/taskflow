@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
 import { BellIcon, CircleCheckBigIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const WINDOW_HOURS = 24
 
@@ -18,6 +19,7 @@ export function NotificationBell() {
   const { data, isError } = useDueTasks(WINDOW_HOURS)
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const tasks = data ?? []
   const overdue = tasks.filter((task) => task.dueDate && isOverdue(task.dueDate))
@@ -36,7 +38,7 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="text-muted-foreground relative"
-          aria-label={count > 0 ? `Notifications : ${count} tâche${count > 1 ? 's' : ''} à surveiller` : 'Notifications'}
+          aria-label={count > 0 ? t('notifications.labelCount', { count }) : t('notifications.label')}
         >
           <BellIcon className="size-5" />
           {count > 0 && (
@@ -48,22 +50,22 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="border-b px-4 py-3">
-          <p className="text-sm font-semibold">Échéances</p>
-          <p className="text-muted-foreground text-xs">Tâches en retard ou à rendre dans les 24 h</p>
+          <p className="text-sm font-semibold">{t('notifications.title')}</p>
+          <p className="text-muted-foreground text-xs">{t('notifications.subtitle')}</p>
         </div>
 
         <div className="max-h-96 overflow-y-auto py-1">
-          {isError && <p className="text-destructive px-4 py-6 text-center text-sm">Échéances indisponibles.</p>}
+          {isError && <p className="text-destructive px-4 py-6 text-center text-sm">{t('notifications.unavailable')}</p>}
 
           {!isError && count === 0 && (
             <p className="text-muted-foreground flex flex-col items-center gap-2 px-4 py-8 text-center text-sm">
               <CircleCheckBigIcon className="text-success size-6" />
-              Rien d'urgent : aucune échéance dans les prochaines 24 h.
+              {t('notifications.empty')}
             </p>
           )}
 
-          <DueGroup title="En retard" tasks={overdue} onSelect={openTask} />
-          <DueGroup title="Dans les 24 h" tasks={upcoming} onSelect={openTask} />
+          <DueGroup title={t('notifications.overdue')} tasks={overdue} onSelect={openTask} />
+          <DueGroup title={t('notifications.upcoming')} tasks={upcoming} onSelect={openTask} />
         </div>
       </PopoverContent>
     </Popover>

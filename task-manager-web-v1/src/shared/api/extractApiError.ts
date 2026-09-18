@@ -1,4 +1,5 @@
 import type { ApiErrorResponse, ApiFieldError } from '@/shared/types/api'
+import { i18n } from '@/shared/i18n/i18n'
 import axios from 'axios'
 
 export type ExtractedApiError = {
@@ -6,9 +7,6 @@ export type ExtractedApiError = {
   code?: ApiErrorResponse['code']
   fieldErrors: ApiFieldError[]
 }
-
-const NETWORK_MESSAGE = "Le serveur est injoignable. Vérifier qu'il est démarré, puis réessayer."
-const FALLBACK_MESSAGE = 'Une erreur inattendue est survenue.'
 
 /**
  * Traduction unique d'une erreur HTTP en message affichable (INV-21) : tout écran affiche
@@ -21,8 +19,8 @@ export function extractApiError(error: unknown): ExtractedApiError {
       return { message: body.message, code: body.code, fieldErrors: body.fieldErrors ?? [] }
     }
     if (!error.response) {
-      return { message: NETWORK_MESSAGE, fieldErrors: [] }
+      return { message: i18n.t('errors.network'), fieldErrors: [] }
     }
   }
-  return { message: FALLBACK_MESSAGE, fieldErrors: [] }
+  return { message: i18n.t('errors.unexpected'), fieldErrors: [] }
 }

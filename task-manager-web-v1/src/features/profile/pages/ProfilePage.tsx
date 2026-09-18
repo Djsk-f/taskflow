@@ -4,21 +4,23 @@ import { ProfileForm } from '@/features/profile/components/ProfileForm'
 import { AppShell } from '@/shared/components/layout/AppShell'
 import { formatDate } from '@/shared/lib/formatDate'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export function ProfilePage() {
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   return (
-    <AppShell title="Profil">
+    <AppShell title={t('profile.title')}>
       <div className="grid max-w-4xl gap-6 lg:grid-cols-2">
         <Card
-          title="Informations personnelles"
-          description={user ? `Compte créé le ${formatDate(user.createdAt)}` : ''}
+          title={t('profile.info.title')}
+          description={user ? t('profile.info.createdAt', { date: formatDate(user.createdAt) }) : ''}
         >
           <ProfileForm />
         </Card>
 
-        <Card title="Mot de passe" description="Huit caractères minimum.">
+        <Card title={t('profile.password.title')} description={t('profile.password.hint')}>
           <ChangePasswordForm />
         </Card>
       </div>

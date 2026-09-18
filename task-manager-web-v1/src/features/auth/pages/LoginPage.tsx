@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
@@ -15,6 +16,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [alert, setAlert] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -35,13 +37,13 @@ export function LoginPage() {
 
   return (
     <AuthLayout
-      title="Connexion"
-      subtitle="Accéder à vos tâches"
+      title={t('auth.login.title')}
+      subtitle={t('auth.login.subtitle')}
       footer={
         <>
-          Pas encore de compte ?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/register" className="text-primary font-medium hover:underline">
-            Créer un compte
+            {t('auth.login.toRegister')}
           </Link>
         </>
       }
@@ -52,21 +54,21 @@ export function LoginPage() {
         <FormTextField
           control={form.control}
           name="email"
-          label="Email"
+          label={t('auth.fields.email')}
           type="email"
-          placeholder="vous@example.com"
+          placeholder={t('auth.placeholders.email')}
           autoComplete="email"
         />
         <FormTextField
           control={form.control}
           name="password"
-          label="Mot de passe"
+          label={t('auth.fields.passwordField')}
           type="password"
           autoComplete="current-password"
         />
 
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Connexion…' : 'Se connecter'}
+          {form.formState.isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
         </Button>
       </form>
     </AuthLayout>
