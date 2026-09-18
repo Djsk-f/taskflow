@@ -1,4 +1,5 @@
 import { TaskPriorityBadge } from '@/features/tasks/components/TaskBadges'
+import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButton'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
@@ -76,7 +77,8 @@ function TaskCardContent({ task, ...actions }: TaskCardProps) {
           <TaskPriorityBadge priority={task.priority} />
           <TaskTimeSpent task={task} />
         </div>
-        <div {...stopDrag}>
+        <div className="flex items-center" {...stopDrag}>
+          <TaskCompleteButton task={task} onMove={actions.onMove} />
           <TaskRowActions task={task} {...actions} />
         </div>
       </div>

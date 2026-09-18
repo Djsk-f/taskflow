@@ -27,7 +27,7 @@ export function DashboardPage() {
   return (
     <AppShell title={t('dashboard.title')}>
       {isPending && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
             <Skeleton key={index} className="h-32 rounded-2xl" />
           ))}
@@ -49,18 +49,20 @@ export function DashboardPage() {
 
       {data && data.total > 0 && (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
             <StatTile
               label={t('dashboard.tiles.total')}
               value={data.total}
               hint={t('dashboard.tiles.totalHint')}
               icon={ListChecksIcon}
+              to="/tasks?view=table"
             />
             <StatTile
               label={t('dashboard.tiles.done')}
               value={data.byStatus.DONE}
               hint={t('dashboard.tiles.doneHint', { percent: Math.round((data.byStatus.DONE / data.total) * 100) })}
               icon={CircleCheckBigIcon}
+              to="/tasks?view=table&status=DONE"
             />
             <StatTile
               label={t('dashboard.tiles.overdue')}
@@ -68,18 +70,22 @@ export function DashboardPage() {
               hint={data.overdue > 0 ? t('dashboard.tiles.overdueHint') : t('dashboard.tiles.noOverdue')}
               icon={AlarmClockIcon}
               alert={data.overdue > 0}
+              to="/tasks?view=table&due=OVERDUE"
             />
             <StatTile
               label={t('dashboard.tiles.week')}
               value={data.dueThisWeek}
               hint={t('dashboard.tiles.weekHint')}
               icon={CalendarRangeIcon}
+              to="/tasks?view=table&due=THIS_WEEK"
             />
             <StatTile
               label={t('dashboard.tiles.timeWeek')}
               value={formatDuration(weekMinutes)}
               hint={t('dashboard.tiles.timeWeekHint')}
               icon={ClockIcon}
+              to="/timesheets"
+              className="col-span-2 xl:col-span-1"
             />
           </div>
 

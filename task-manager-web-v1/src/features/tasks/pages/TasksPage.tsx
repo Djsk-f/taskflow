@@ -1,3 +1,4 @@
+import { useAuth } from '@/features/auth/useAuth'
 import { DeleteTaskDialog } from '@/features/tasks/components/DeleteTaskDialog'
 import { KanbanBoard } from '@/features/tasks/components/KanbanBoard'
 import { TaskFiltersBar } from '@/features/tasks/components/TaskFilters'
@@ -18,7 +19,8 @@ import {
   withTaskView,
   writeTaskFilters,
 } from '@/features/tasks/taskFilters'
-import type { Task, TaskFilters, TaskStatus, TaskView } from '@/features/tasks/types'
+import { taskDraftStorage } from '@/features/tasks/taskDraft'
+import type { Task, TaskFilters, TaskSort, TaskStatus, TaskView } from '@/features/tasks/types'
 import { extractApiError } from '@/shared/api/extractApiError'
 import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
@@ -47,7 +49,16 @@ export function TasksPage() {
     setSearchDraft(filters.search)
   }
 
-  const [formOpen, setFormOpen] = useState(false)
+  // Saisie interrompue par une session expirée : le formulaire se rouvre avec elle.
+  const { user } = useAuth()
+  const [draft, setDraft] = useState(() => (user ? taskDraftStorage.read(user.id) : null))
+  useEffect(() => {
+    if (draft) {
+      taskDraftStorage.clear()
+    }
+  }, [draft])
+
+  const [formOpen, setFormOpen] = useState(draft !== null)
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined)
   const [createStatus, setCreateStatus] = useState<TaskStatus>('TODO')
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
@@ -75,6 +86,7 @@ export function TasksPage() {
   }
 
   const openCreateForm = (status: TaskStatus = 'TODO') => {
+    setDraft(null)
     setTaskToEdit(undefined)
     setCreateStatus(status)
     setFormOpen(true)
@@ -82,6 +94,7 @@ export function TasksPage() {
 
   const actions: TaskActionHandlers = {
     onEdit: (task) => {
+      setDraft(null)
       setTaskToEdit(task)
       setFormOpen(true)
     },
@@ -92,7 +105,7 @@ export function TasksPage() {
 
   const resetFilters = () => {
     setSearchDraft('')
-    navigate({ ...filters, search: '', status: null, priority: null, page: 0 })
+    navigate({ ...filters, search: '', status: null, priority: null, due: null, page: 0 })
   }
 
   return (
@@ -114,7 +127,11 @@ export function TasksPage() {
           onStatusChange={(status) => applyFilters({ status })}
           priority={filters.priority}
           onPriorityChange={(priority) => applyFilters({ priority })}
-          onClearFilters={() => applyFilters({ priority: null, status: null })}
+          due={filters.due}
+          onDueChange={(due) => applyFilters({ due })}
+          sort={filters.sort}
+          onSortChange={(sort) => applyFilters({ sort })}
+          onClearFilters={() => applyFilters({ priority: null, status: null, due: null })}
           showStatus={view !== 'kanban'}
         />
       </div>
@@ -123,6 +140,8 @@ export function TasksPage() {
         <KanbanBoard
           search={filters.search}
           priority={filters.priority}
+          due={filters.due}
+          sort={filters.sort}
           pendingMoves={pendingMoves}
           onCreate={openCreateForm}
           onShowInTable={(status) => navigate({ ...filters, status, page: 0 }, 'table')}
@@ -135,12 +154,24 @@ export function TasksPage() {
           actions={actions}
           onPageChange={(page) => applyFilters({ page })}
           onPageSizeChange={(size) => applyFilters({ size, page: 0 })}
+          onSortChange={(sort) => applyFilters({ sort })}
           onCreate={() => openCreateForm()}
           onResetFilters={resetFilters}
         />
       )}
 
-      <TaskFormDialog open={formOpen} onOpenChange={setFormOpen} task={taskToEdit} defaultStatus={createStatus} />
+      <TaskFormDialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          setFormOpen(open)
+          if (!open) {
+            setDraft(null)
+          }
+        }}
+        task={taskToEdit}
+        defaultStatus={createStatus}
+        draft={draft}
+      />
       <DeleteTaskDialog task={taskToDelete} onClose={() => setTaskToDelete(null)} />
       <LogTimeDialog task={taskToLog} onClose={() => setTaskToLog(null)} />
     </AppShell>
@@ -153,17 +184,19 @@ type PaginatedTasksProps = {
   actions: TaskActionHandlers
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
+  onSortChange: (sort: TaskSort) => void
   onCreate: () => void
   onResetFilters: () => void
 }
 
-/** Vues Tableau et Liste : mêmes données paginées, mêmes quatre états, rendu différent. */
+/** Vues Grille et Liste : mêmes données paginées, mêmes quatre états, rendu différent. */
 function PaginatedTasks({
   view,
   filters,
   actions,
   onPageChange,
   onPageSizeChange,
+  onSortChange,
   onCreate,
   onResetFilters,
 }: PaginatedTasksProps) {
@@ -181,7 +214,7 @@ function PaginatedTasks({
           icon={ListChecksIcon}
           title={t('tasks.empty.title')}
           description={t('tasks.empty.description')}
-          action={{ label: t('tasks.create'), onClick: onCreate }}
+          action={{ label: t('tasks.empty.action'), onClick: onCreate }}
         />
       )}
 
@@ -197,7 +230,7 @@ function PaginatedTasks({
       {data && data.content.length > 0 && (
         <>
           {view === 'table' ? (
-            <TaskTable tasks={data.content} {...actions} />
+            <TaskTable tasks={data.content} sort={filters.sort} onSortChange={onSortChange} {...actions} />
           ) : (
             <TaskList tasks={data.content} {...actions} />
           )}

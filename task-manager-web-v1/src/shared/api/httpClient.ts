@@ -15,10 +15,24 @@ export const httpClient = axios.create({
 })
 
 let unauthorizedHandler: (() => void) | null = null
+const sessionExpiredListeners = new Set<() => void>()
 
 /** Branché une seule fois par AuthProvider, pour éviter un import circulaire. */
 export function setUnauthorizedHandler(handler: () => void): void {
   unauthorizedHandler = handler
+}
+
+/**
+ * Prévient un composant qu'une session vient d'expirer, AVANT la déconnexion : un
+ * formulaire ouvert peut encore lire sa saisie et la mettre de côté. N'importe quelle
+ * requête peut révéler l'expiration (la cloche interroge le serveur chaque minute), pas
+ * seulement l'envoi du formulaire. Renvoie la fonction de désabonnement.
+ */
+export function onSessionExpired(listener: () => void): () => void {
+  sessionExpiredListeners.add(listener)
+  return () => {
+    sessionExpiredListeners.delete(listener)
+  }
 }
 
 httpClient.interceptors.request.use((config) => {
@@ -36,11 +50,17 @@ httpClient.interceptors.response.use(
   (error: unknown) => {
     if (axios.isAxiosError(error) && isSessionExpired(error)) {
       tokenStorage.clear()
+      sessionExpiredListeners.forEach((listener) => listener())
       unauthorizedHandler?.()
     }
     return Promise.reject(error)
   },
 )
+
+/** Vrai si l'erreur vient d'une session expirée (le client a déjà déconnecté l'utilisateur). */
+export function isSessionExpiredError(error: unknown): boolean {
+  return axios.isAxiosError(error) && isSessionExpired(error)
+}
 
 /**
  * Seul un 401 qui n'est PAS `INVALID_CREDENTIALS` signifie une session expirée.

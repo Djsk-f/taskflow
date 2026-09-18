@@ -20,6 +20,13 @@ const Toaster = (props: ToasterProps) => (
     className="toaster group"
     position="bottom-right"
     richColors
+    // Bouton « Annuler » : secondaire, cible de 32 px au moins, contour de focus visible.
+    toastOptions={{
+      classNames: {
+        actionButton:
+          '!bg-card !text-foreground !border !border-current/20 !h-8 !px-3 !font-medium focus-visible:!ring-[3px] focus-visible:!ring-ring/50',
+      },
+    }}
     icons={{
       success: <CircleCheckIcon className="size-4" />,
       info: <InfoIcon className="size-4" />,

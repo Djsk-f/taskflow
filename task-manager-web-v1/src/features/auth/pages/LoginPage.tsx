@@ -2,17 +2,19 @@ import { AuthLayout } from '@/features/auth/components/AuthLayout'
 import { loginSchema, type LoginValues } from '@/features/auth/schemas'
 import { useAuth } from '@/features/auth/useAuth'
 import { FormAlert } from '@/shared/components/feedback/FormAlert'
+import { FormNotice } from '@/shared/components/feedback/FormNotice'
 import { applyApiErrorToForm } from '@/shared/components/form/applyApiErrorToForm'
 import { FormTextField } from '@/shared/components/form/FormTextField'
 import { Button } from '@/shared/ui/button'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { TimerOffIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, sessionExpired } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [alert, setAlert] = useState<string | null>(null)
@@ -50,6 +52,7 @@ export function LoginPage() {
     >
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {alert && <FormAlert message={alert} />}
+        {!alert && sessionExpired && <FormNotice icon={TimerOffIcon} message={t('auth.sessionExpired')} />}
 
         <FormTextField
           control={form.control}

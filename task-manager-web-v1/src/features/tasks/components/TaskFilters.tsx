@@ -1,10 +1,19 @@
 import { TASK_PRIORITY_META, TASK_STATUS_META } from '@/features/tasks/taskMeta'
-import { TASK_PRIORITIES, TASK_STATUSES, type TaskPriority, type TaskStatus } from '@/features/tasks/types'
+import { TaskSortMenu } from '@/features/tasks/components/TaskSortMenu'
+import {
+  TASK_DUE_FILTERS,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  type TaskDueFilter,
+  type TaskPriority,
+  type TaskSort,
+  type TaskStatus,
+} from '@/features/tasks/types'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover'
-import { SearchIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react'
+import { AlarmClockIcon, CalendarRangeIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -15,16 +24,23 @@ type TaskFiltersBarProps = {
   onStatusChange: (value: TaskStatus | null) => void
   priority: TaskPriority | null
   onPriorityChange: (value: TaskPriority | null) => void
-  /** Retire priorité et statut en une seule navigation (deux appels successifs s'écraseraient). */
+  due: TaskDueFilter | null
+  onDueChange: (value: TaskDueFilter | null) => void
+  sort: TaskSort
+  onSortChange: (value: TaskSort) => void
+  /** Retire tous les filtres en une seule navigation (deux appels successifs s'écraseraient). */
   onClearFilters: () => void
   /** Masqué en vue Kanban : les colonnes sont déjà les statuts. */
   showStatus?: boolean
 }
 
+/** Icônes des filtres d'échéance, reprises des tuiles du tableau de bord. */
+const DUE_ICONS = { OVERDUE: AlarmClockIcon, THIS_WEEK: CalendarRangeIcon } as const satisfies Record<TaskDueFilter, unknown>
+
 /**
- * Recherche et filtres (EX-08 à EX-10) : un champ de recherche, un bouton « Filtres »
- * ouvrant des pastilles (priorité, statut), et les filtres actifs en étiquettes
- * supprimables. Libellés, icônes et couleurs viennent de taskMeta.
+ * Recherche, filtres et tri (EX-08 à EX-10) : un champ de recherche, un bouton « Filtres »
+ * ouvrant des pastilles (priorité, statut, échéance), le menu « Trier », et les filtres
+ * actifs en étiquettes supprimables. Libellés, icônes et couleurs viennent de taskMeta.
  */
 export function TaskFiltersBar({
   searchDraft,
@@ -33,12 +49,16 @@ export function TaskFiltersBar({
   onStatusChange,
   priority,
   onPriorityChange,
+  due,
+  onDueChange,
+  sort,
+  onSortChange,
   onClearFilters,
   showStatus = true,
 }: TaskFiltersBarProps) {
   const { t } = useTranslation()
   const visibleStatus = showStatus ? status : null
-  const activeCount = (priority ? 1 : 0) + (visibleStatus ? 1 : 0)
+  const activeCount = (priority ? 1 : 0) + (visibleStatus ? 1 : 0) + (due ? 1 : 0)
 
   return (
     <div className="space-y-3">
@@ -98,6 +118,18 @@ export function TaskFiltersBar({
               </ChipGroup>
             )}
 
+            <ChipGroup label={t('tasks.filters.due')}>
+              {TASK_DUE_FILTERS.map((value) => {
+                const Icon = DUE_ICONS[value]
+                return (
+                  <Chip key={value} selected={due === value} onClick={() => onDueChange(due === value ? null : value)}>
+                    <Icon className="size-3.5" />
+                    {t(`tasks.filters.dueValues.${value}`)}
+                  </Chip>
+                )
+              })}
+            </ChipGroup>
+
             <div className="flex justify-end border-t pt-3">
               <Button variant="ghost" size="sm" onClick={onClearFilters} disabled={activeCount === 0}>
                 {t('tasks.filters.clear')}
@@ -105,6 +137,8 @@ export function TaskFiltersBar({
             </div>
           </PopoverContent>
         </Popover>
+
+        <TaskSortMenu sort={sort} onChange={onSortChange} />
       </div>
 
       {activeCount > 0 && (
@@ -119,6 +153,12 @@ export function TaskFiltersBar({
             <ActiveFilter
               label={t('tasks.filters.chip', { name: t('tasks.filters.status'), value: t(TASK_STATUS_META[visibleStatus].labelKey) })}
               onRemove={() => onStatusChange(null)}
+            />
+          )}
+          {due && (
+            <ActiveFilter
+              label={t('tasks.filters.chip', { name: t('tasks.filters.due'), value: t(`tasks.filters.dueValues.${due}`) })}
+              onRemove={() => onDueChange(null)}
             />
           )}
           <button

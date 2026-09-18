@@ -3,8 +3,16 @@ import { TaskCardPreview } from '@/features/tasks/components/TaskCard'
 import type { TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import { tasksQueryOptions } from '@/features/tasks/hooks/useTasks'
 import { TASK_STATUS_META } from '@/features/tasks/taskMeta'
-import { TASK_STATUSES, type Task, type TaskPriority, type TaskStatus } from '@/features/tasks/types'
+import {
+  TASK_STATUSES,
+  type Task,
+  type TaskDueFilter,
+  type TaskPriority,
+  type TaskSort,
+  type TaskStatus,
+} from '@/features/tasks/types'
 import { extractApiError } from '@/shared/api/extractApiError'
+import { EmptyState } from '@/shared/components/feedback/EmptyState'
 import { ErrorState } from '@/shared/components/feedback/ErrorState'
 import {
   DndContext,
@@ -21,6 +29,7 @@ import {
 } from '@dnd-kit/core'
 import type { TFunction } from 'i18next'
 import { useQueries } from '@tanstack/react-query'
+import { ListChecksIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -32,6 +41,8 @@ const COLUMN_MAX = 50
 type KanbanBoardProps = {
   search: string
   priority: TaskPriority | null
+  due: TaskDueFilter | null
+  sort: TaskSort
   pendingMoves: Record<number, TaskStatus>
   onCreate: (status: TaskStatus) => void
   onShowInTable: (status: TaskStatus) => void
@@ -39,10 +50,19 @@ type KanbanBoardProps = {
 
 /**
  * Vue Kanban (bonus B-01), vue par défaut comme sur la capture : une colonne par statut,
- * glisser-déposer à la souris, au doigt ou au clavier. La recherche et le filtre de
- * priorité s'appliquent à toutes les colonnes.
+ * glisser-déposer à la souris, au doigt ou au clavier. Recherche, filtres de priorité et
+ * d'échéance et tri s'appliquent à toutes les colonnes.
  */
-export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowInTable, ...actions }: KanbanBoardProps) {
+export function KanbanBoard({
+  search,
+  priority,
+  due,
+  sort,
+  pendingMoves,
+  onCreate,
+  onShowInTable,
+  ...actions
+}: KanbanBoardProps) {
   const [limits, setLimits] = useState<Record<TaskStatus, number>>({
     TODO: COLUMN_STEP,
     IN_PROGRESS: COLUMN_STEP,
@@ -51,7 +71,7 @@ export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowIn
   })
   const queries = useQueries({
     queries: TASK_STATUSES.map((status) =>
-      tasksQueryOptions({ search, priority, status, page: 0, size: limits[status] }),
+      tasksQueryOptions({ search, priority, due, sort, status, page: 0, size: limits[status] }),
     ),
   })
   const showMore = (status: TaskStatus) =>
@@ -75,6 +95,22 @@ export function KanbanBoard({ search, priority, pendingMoves, onCreate, onShowIn
         message={extractApiError(failed.query.error).message}
         onRetry={() => columns.forEach((column) => column.query.refetch())}
       />
+    )
+  }
+
+  // Compte neuf : quatre colonnes vides n'expliquent rien, on invite à créer la première tâche.
+  const isFiltered = search !== '' || priority !== null || due !== null
+  const isEmpty = columns.every((column) => column.query.data?.totalElements === 0)
+  if (isEmpty && !isFiltered) {
+    return (
+      <section className="bg-card shadow-card rounded-card border">
+        <EmptyState
+          icon={ListChecksIcon}
+          title={t('tasks.empty.title')}
+          description={t('tasks.empty.description')}
+          action={{ label: t('tasks.empty.action'), onClick: () => onCreate('TODO') }}
+        />
+      </section>
     )
   }
 

@@ -1,4 +1,4 @@
-import { currentLanguage } from '@/shared/i18n/i18n'
+import { formattingLocale } from '@/shared/i18n/i18n'
 
 /**
  * Semaines de la feuille de temps : du lundi au dimanche, en heure locale. Les jours
@@ -33,7 +33,7 @@ export function weekDays(monday: Date): Date[] {
   return Array.from({ length: 7 }, (_, index) => addDays(monday, index))
 }
 
-const locale = () => (currentLanguage() === 'en' ? 'en-US' : 'fr-FR')
+const locale = formattingLocale
 
 /** « 14 – 20 sept. 2026 » / « Sep 14 – 20, 2026 ». */
 export function formatWeekRange(monday: Date): string {

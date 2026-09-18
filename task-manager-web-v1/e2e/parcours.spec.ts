@@ -6,7 +6,7 @@ const DEMO = { email: 'camille.martin@taskflow.dev', password: process.env.E2E_D
 async function signInAsDemo(page: Page) {
   await page.goto('/login')
   await page.getByLabel('Email').fill(DEMO.email)
-  await page.getByLabel('Mot de passe').fill(DEMO.password)
+  await page.getByLabel('Mot de passe', { exact: true }).fill(DEMO.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page).toHaveURL(/\/tasks/)
 }
@@ -14,12 +14,14 @@ async function signInAsDemo(page: Page) {
 /** Compte neuf à chaque exécution : le parcours n'altère jamais le compte de démonstration. */
 async function registerFreshAccount(page: Page) {
   const stamp = Date.now()
+  const account = { email: `e2e.${stamp}@exemple.com`, password: `Parcours-${stamp}` }
   await page.goto('/register')
   await page.getByLabel('Nom complet').fill('Parcours E2E')
-  await page.getByLabel('Email').fill(`e2e.${stamp}@exemple.com`)
-  await page.getByLabel('Mot de passe').fill(`Parcours-${stamp}`)
+  await page.getByLabel('Email').fill(account.email)
+  await page.getByLabel('Mot de passe', { exact: true }).fill(account.password)
   await page.getByRole('button', { name: 'Créer mon compte' }).click()
   await expect(page).toHaveURL(/\/tasks/)
+  return account
 }
 
 test('les pages privées renvoient vers la connexion', async ({ page }) => {
@@ -82,4 +84,33 @@ test('parcours complet : inscription, créer, déplacer, saisir du temps, feuill
   await page.getByRole('menuitem', { name: 'Supprimer' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Supprimer' }).click()
   await expect(page.getByRole('group', { name: title })).toHaveCount(0)
+})
+
+test('premier pas, « terminée » annulable, et session expirée sans perte de saisie', async ({ page }) => {
+  const account = await registerFreshAccount(page)
+
+  // Compte neuf : une invitation claire plutôt que quatre colonnes vides
+  await page.getByRole('button', { name: 'Créer ma première tâche' }).click()
+  await page.getByRole('dialog').getByLabel('Titre').fill('Appeler la mutuelle')
+  await page.getByRole('dialog').getByRole('button', { name: 'Créer la tâche' }).click()
+
+  // « Terminée » en un clic, puis « Annuler » depuis le toast
+  await page.getByRole('button', { name: 'Marquer « Appeler la mutuelle » comme terminée' }).click()
+  await expect(page.getByRole('region', { name: /^Terminé/ }).getByRole('group', { name: 'Appeler la mutuelle' })).toBeVisible()
+  await page.getByRole('button', { name: 'Annuler' }).click()
+  await expect(page.getByRole('region', { name: /^À faire/ }).getByRole('group', { name: 'Appeler la mutuelle' })).toBeVisible()
+
+  // Session expirée pendant une saisie : message, retour à la page, saisie rendue
+  await page.goto('/tasks?view=table&priority=HIGH')
+  await page.getByRole('button', { name: 'Créer une tâche', exact: true }).click()
+  await page.getByRole('dialog').getByLabel('Titre').fill('Déclarer mes revenus')
+  // Le jeton expire pendant la saisie : l'envoi (ou une requête de fond) le révèle.
+  await page.evaluate(() => localStorage.setItem('taskflow.accessToken', 'jeton.expire.invalide'))
+  await page.getByRole('dialog').getByRole('button', { name: 'Créer la tâche' }).click()
+  await expect(page.getByText('Votre session a expiré.', { exact: false })).toBeVisible()
+  await page.getByLabel('Email').fill(account.email)
+  await page.getByLabel('Mot de passe', { exact: true }).fill(account.password)
+  await page.getByRole('button', { name: 'Se connecter' }).click()
+  await expect(page).toHaveURL(/\/tasks\?view=table&priority=HIGH/)
+  await expect(page.getByRole('dialog').getByLabel('Titre')).toHaveValue('Déclarer mes revenus')
 })

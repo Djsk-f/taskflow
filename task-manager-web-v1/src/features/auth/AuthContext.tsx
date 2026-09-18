@@ -12,6 +12,8 @@ export type AuthState = {
   isAuthenticated: boolean
   /** Vrai pendant la restauration de session au premier rendu. */
   isRestoring: boolean
+  /** Vrai après une déconnexion forcée par le serveur (jeton expiré) : la connexion l'explique. */
+  sessionExpired: boolean
   /** Message si la session n'a pas pu être vérifiée (serveur injoignable, 5xx). */
   restoreError: string | null
   retryRestore: () => void
@@ -27,16 +29,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [isRestoring, setIsRestoring] = useState(true)
   const [restoreError, setRestoreError] = useState<string | null>(null)
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   const logout = useCallback(() => {
     tokenStorage.clear()
+    setSessionExpired(false)
     setUser(null)
   }, [])
 
   // Une session expirée détectée par le client HTTP doit vider l'état applicatif :
-  // sans cela l'interface afficherait un utilisateur connecté qui ne l'est plus.
+  // sans cela l'interface afficherait un utilisateur connecté qui ne l'est plus. La page
+  // de connexion dit pourquoi, au lieu d'une déconnexion muette.
   useEffect(() => {
-    setUnauthorizedHandler(() => setUser(null))
+    setUnauthorizedHandler(() => {
+      setSessionExpired(true)
+      setUser(null)
+    })
   }, [])
 
   // Restauration au chargement : un jeton en stockage ne prouve rien, on le confronte
@@ -68,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applyAuthResponse = useCallback(async (request: Promise<{ accessToken: string; user: UserProfile }>) => {
     const response = await request
     tokenStorage.write(response.accessToken)
+    setSessionExpired(false)
     setUser(response.user)
   }, [])
 
@@ -76,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: user !== null,
       isRestoring,
+      sessionExpired,
       restoreError,
       retryRestore: restoreSession,
       login: (values) => applyAuthResponse(authApi.login(values)),
@@ -83,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       updateUser: setUser,
     }),
-    [user, isRestoring, restoreError, restoreSession, applyAuthResponse, logout],
+    [user, isRestoring, sessionExpired, restoreError, restoreSession, applyAuthResponse, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

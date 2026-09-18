@@ -23,6 +23,14 @@ export function AppShell({ title, action, toolbar, children }: AppShellProps) {
 
   return (
     <div className="flex min-h-screen">
+      {/* Premier élément atteint au clavier : évite de traverser toute la navigation à chaque page. */}
+      <a
+        href="#main-content"
+        className="bg-primary text-primary-foreground sr-only z-50 rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        {t('common.skipToContent')}
+      </a>
+
       <aside className="bg-card sticky top-0 hidden h-screen w-60 shrink-0 border-r lg:block">
         <SidebarContent />
       </aside>
@@ -39,7 +47,9 @@ export function AppShell({ title, action, toolbar, children }: AppShellProps) {
           <Topbar title={title} action={action} onOpenMenu={() => setMenuOpen(true)} />
           {toolbar && <div className="px-4 pb-3 sm:px-8">{toolbar}</div>}
         </div>
-        <main className="flex-1 px-4 py-6 sm:px-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-6 outline-none sm:px-8">
+          {children}
+        </main>
       </div>
     </div>
   )

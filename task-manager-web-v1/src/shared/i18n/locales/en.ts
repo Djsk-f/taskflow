@@ -12,6 +12,9 @@ export const en: Dictionary<typeof fr> = {
     loading: 'Loading…',
     choose: 'Choose…',
     showMore: 'Show more',
+    undo: 'Undo',
+    close: 'Close',
+    skipToContent: 'Skip to content',
     pagination: {
       label: 'Pagination',
       previous: 'Previous page',
@@ -47,6 +50,9 @@ export const en: Dictionary<typeof fr> = {
     restoring: 'Restoring your session…',
     fields: { fullName: 'Full name', email: 'Email', passwordField: 'Password' },
     placeholders: { fullName: 'Camille Martin', email: 'you@example.com', passwordField: 'At least 8 characters' },
+    passwordShow: 'Show password',
+    passwordHide: 'Hide password',
+    sessionExpired: 'Your session has expired. Sign in again to pick up where you left off.',
     login: {
       title: 'Sign in',
       subtitle: 'Access your tasks',
@@ -102,6 +108,30 @@ export const en: Dictionary<typeof fr> = {
     moved: '"{{title}}" moved to {{status}}.',
     late: '(overdue)',
     views: { label: 'Task view', table: 'Table', list: 'List', kanban: 'Kanban' },
+    complete: {
+      mark: 'Mark "{{title}}" as done',
+      reopen: 'Reopen "{{title}}"',
+    },
+    sort: {
+      button: 'Sort',
+      label: 'Sort tasks (currently: {{current}})',
+      current: '{{field}}, {{direction}}',
+      by: 'Sort by {{column}}',
+      fields: {
+        dueDate: 'Due date',
+        priority: 'Priority',
+        status: 'Status',
+        title: 'Title',
+        createdAt: 'Creation date',
+      },
+      directions: { asc: 'ascending', desc: 'descending' },
+      presets: {
+        dueSoon: 'Due soonest',
+        priorityHigh: 'Highest priority',
+        newest: 'Recently created',
+        title: 'Title (A → Z)',
+      },
+    },
     search: { placeholder: 'Search tasks…', label: 'Search tasks (title or description)' },
     filters: {
       button: 'Filters',
@@ -111,6 +141,8 @@ export const en: Dictionary<typeof fr> = {
       priority: 'Priority',
       clear: 'Clear',
       clearAll: 'Clear all',
+      due: 'Due date',
+      dueValues: { OVERDUE: 'Overdue', THIS_WEEK: 'This week' },
       remove: 'Remove filter "{{label}}"',
       chip: '{{name}}: {{value}}',
       search: 'Search',
@@ -118,6 +150,7 @@ export const en: Dictionary<typeof fr> = {
     empty: {
       title: 'No tasks yet',
       description: 'Create your first task to start organizing your work.',
+      action: 'Create my first task',
     },
     noResults: {
       title: 'No results',
@@ -166,11 +199,18 @@ export const en: Dictionary<typeof fr> = {
       title: 'Title',
       titlePlaceholder: 'e.g. Brand guidelines',
       description: 'Description',
-      descriptionPlaceholder: 'Details, context, acceptance criteria…',
+      descriptionPlaceholder: 'Details, steps, useful links…',
       status: 'Status',
       priority: 'Priority',
       dueDate: 'Due date',
       submitCreate: 'Create task',
+      draftRestored: 'What you typed was kept while you signed back in: check it, then save.',
+      discard: {
+        title: 'Discard your changes?',
+        description: 'What you entered in this form will be lost.',
+        keep: 'Keep editing',
+        confirm: 'Discard',
+      },
     },
     delete: {
       title: 'Delete this task?',

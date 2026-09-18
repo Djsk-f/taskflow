@@ -39,6 +39,17 @@ export function currentLanguage(): Language {
   return language?.startsWith('en') ? 'en' : 'fr'
 }
 
+/**
+ * Locale des dates et nombres : le français de France, ou l'anglais du navigateur s'il en
+ * précise une variante (en-GB : « 25 Sept 2026, 15:00 ») — l'américain à défaut.
+ */
+export function formattingLocale(): string {
+  if (currentLanguage() === 'fr') {
+    return 'fr-FR'
+  }
+  return navigator.languages?.find((language) => language.startsWith('en-')) ?? 'en-US'
+}
+
 // <html lang> suit la langue : lecteurs d'écran, césure, correcteurs.
 const syncHtmlLang = () => document.documentElement.setAttribute('lang', currentLanguage())
 syncHtmlLang()

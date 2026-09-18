@@ -1,11 +1,11 @@
-import { currentLanguage } from '@/shared/i18n/i18n'
+import { formattingLocale } from '@/shared/i18n/i18n'
 
 /** Formateurs Intl mis en cache par langue : créer un Intl.DateTimeFormat coûte cher. */
 const formatters = new Map<string, Intl.DateTimeFormat>()
 
 function formatter(name: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  // Anglais au format américain (« 09/24 · 6:00 PM »), comme la capture de référence.
-  const locale = currentLanguage() === 'en' ? 'en-US' : 'fr-FR'
+  // Format de la variante d'anglais du navigateur : 24/09 pour en-GB, 09/24 pour en-US.
+  const locale = formattingLocale()
   const key = `${locale}:${name}`
   let cached = formatters.get(key)
   if (!cached) {

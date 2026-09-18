@@ -9,6 +9,8 @@ export const taskApi = {
         search: filters.search || undefined,
         status: filters.status ?? undefined,
         priority: filters.priority ?? undefined,
+        due: filters.due ?? undefined,
+        sort: `${filters.sort.field},${filters.sort.direction}`,
         page: filters.page,
         size: filters.size,
       },

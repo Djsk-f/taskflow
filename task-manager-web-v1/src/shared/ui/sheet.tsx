@@ -2,6 +2,7 @@ import * as React from "react"
 import { useReturnFocus } from "@/shared/hooks/useReturnFocus"
 import { cn } from "@/shared/lib/utils"
 import { XIcon } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
@@ -55,6 +56,7 @@ function SheetContent({
   showCloseButton?: boolean
 }) {
   const returnFocus = useReturnFocus(onOpenAutoFocus, onCloseAutoFocus)
+  const { t } = useTranslation()
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -79,7 +81,7 @@ function SheetContent({
         {showCloseButton && (
           <SheetPrimitive.Close className="absolute top-2 right-2 flex size-10 items-center justify-center rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
             <XIcon className="size-4" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("common.close")}</span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Content>

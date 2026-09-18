@@ -1,4 +1,5 @@
 import { TaskFiltersBar } from '@/features/tasks/components/TaskFilters'
+import { DEFAULT_SORT } from '@/features/tasks/taskFilters'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -11,6 +12,10 @@ function renderBar(overrides: Partial<Parameters<typeof TaskFiltersBar>[0]> = {}
     onStatusChange: vi.fn(),
     priority: null,
     onPriorityChange: vi.fn(),
+    due: null,
+    onDueChange: vi.fn(),
+    sort: DEFAULT_SORT,
+    onSortChange: vi.fn(),
     onClearFilters: vi.fn(),
     ...overrides,
   }
@@ -51,5 +56,23 @@ describe('TaskFiltersBar', () => {
     await user.click(screen.getByRole('button', { name: 'Filtres' }))
     expect(screen.queryByText('Statut')).not.toBeInTheDocument()
     expect(screen.getByText('Priorité')).toBeInTheDocument()
+  })
+
+  it('filtre les tâches en retard et l’affiche comme filtre actif', async () => {
+    const user = userEvent.setup()
+    const props = renderBar()
+
+    await user.click(screen.getByRole('button', { name: 'Filtres' }))
+    await user.click(screen.getByRole('button', { name: /En retard/ }))
+    expect(props.onDueChange).toHaveBeenCalledWith('OVERDUE')
+  })
+
+  it('propose les tris courants et annonce le tri actif', async () => {
+    const user = userEvent.setup()
+    const props = renderBar()
+
+    await user.click(screen.getByRole('button', { name: 'Trier les tâches (actuellement : Échéance la plus proche)' }))
+    await user.click(screen.getByRole('menuitemradio', { name: 'Priorité la plus haute' }))
+    expect(props.onSortChange).toHaveBeenCalledWith({ field: 'priority', direction: 'desc' })
   })
 })

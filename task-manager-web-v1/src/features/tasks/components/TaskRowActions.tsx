@@ -16,7 +16,8 @@ import { useTranslation } from 'react-i18next'
 export type TaskActionHandlers = {
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
-  onMove: (task: Task, status: TaskStatus) => void
+  /** `undoable` à faux : pas de bouton « Annuler » (c'est déjà une annulation). */
+  onMove: (task: Task, status: TaskStatus, undoable?: boolean) => void
   onLogTime: (task: Task) => void
 }
 

@@ -1,4 +1,5 @@
 import { TaskPriorityBadge, TaskStatusBadge } from '@/features/tasks/components/TaskBadges'
+import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButton'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
@@ -24,7 +25,10 @@ export function TaskList({ tasks, ...actions }: { tasks: Task[] } & TaskActionHa
               <TaskTimeSpent task={task} />
             </div>
           </div>
-          <TaskRowActions task={task} {...actions} />
+          <div className="flex shrink-0 items-center">
+            <TaskCompleteButton task={task} onMove={actions.onMove} />
+            <TaskRowActions task={task} {...actions} />
+          </div>
         </li>
       ))}
     </ul>

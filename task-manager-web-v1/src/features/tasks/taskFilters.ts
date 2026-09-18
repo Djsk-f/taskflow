@@ -1,9 +1,15 @@
 import {
+  TASK_DUE_FILTERS,
   TASK_PRIORITIES,
+  TASK_SORT_FIELDS,
   TASK_STATUSES,
   TASK_VIEWS,
+  type SortDirection,
+  type TaskDueFilter,
   type TaskFilters,
   type TaskPriority,
+  type TaskSort,
+  type TaskSortField,
   type TaskStatus,
   type TaskView,
 } from '@/features/tasks/types'
@@ -12,6 +18,16 @@ export const DEFAULT_PAGE_SIZE = 10
 /** Tailles proposées ; 50 est le plafond du serveur. */
 export const PAGE_SIZES = [10, 20, 50] as const
 export const DEFAULT_VIEW: TaskView = 'kanban'
+/** Ce qui presse d'abord, dans toutes les vues ; les tâches sans échéance ferment la marche. */
+export const DEFAULT_SORT: TaskSort = { field: 'dueDate', direction: 'asc' }
+/** Sens appliqué au premier clic sur une colonne : celui qu'on cherche le plus souvent. */
+const NATURAL_DIRECTION: Record<TaskSortField, SortDirection> = {
+  dueDate: 'asc',
+  priority: 'desc',
+  status: 'asc',
+  title: 'asc',
+  createdAt: 'desc',
+}
 
 /**
  * Les filtres vivent dans l'URL : un lien reste partageable, le retour arrière fonctionne,
@@ -23,6 +39,8 @@ export function readTaskFilters(params: URLSearchParams): TaskFilters {
     search: params.get('search') ?? '',
     status: parseEnum(params.get('status'), TASK_STATUSES),
     priority: parseEnum(params.get('priority'), TASK_PRIORITIES),
+    due: parseEnum(params.get('due'), TASK_DUE_FILTERS),
+    sort: parseSort(params.get('sort')),
     page: Math.max(0, Number.parseInt(params.get('page') ?? '0', 10) || 0),
     size: parsePageSize(params.get('size')),
   }
@@ -38,6 +56,12 @@ export function writeTaskFilters(filters: TaskFilters): URLSearchParams {
   }
   if (filters.priority) {
     params.set('priority', filters.priority)
+  }
+  if (filters.due) {
+    params.set('due', filters.due)
+  }
+  if (!isSameSort(filters.sort, DEFAULT_SORT)) {
+    params.set('sort', `${filters.sort.field},${filters.sort.direction}`)
   }
   if (filters.page > 0) {
     params.set('page', String(filters.page))
@@ -64,7 +88,28 @@ export function withTaskView(params: URLSearchParams, view: TaskView): URLSearch
 }
 
 export function hasActiveFilters(filters: TaskFilters): boolean {
-  return filters.search !== '' || filters.status !== null || filters.priority !== null
+  return filters.search !== '' || filters.status !== null || filters.priority !== null || filters.due !== null
+}
+
+/** Clic sur une colonne : même colonne → sens inversé ; autre colonne → son sens naturel. */
+export function toggleSort(current: TaskSort, field: TaskSortField): TaskSort {
+  if (current.field === field) {
+    return { field, direction: current.direction === 'asc' ? 'desc' : 'asc' }
+  }
+  return { field, direction: NATURAL_DIRECTION[field] }
+}
+
+export function isSameSort(a: TaskSort, b: TaskSort): boolean {
+  return a.field === b.field && a.direction === b.direction
+}
+
+function parseSort(value: string | null): TaskSort {
+  const [field, direction] = (value ?? '').split(',')
+  const knownField = parseEnum(field ?? null, TASK_SORT_FIELDS)
+  if (!knownField) {
+    return DEFAULT_SORT
+  }
+  return { field: knownField, direction: direction === 'asc' || direction === 'desc' ? direction : NATURAL_DIRECTION[knownField] }
 }
 
 function parsePageSize(value: string | null): number {
@@ -73,6 +118,6 @@ function parsePageSize(value: string | null): number {
 }
 
 /** Une valeur d'URL inconnue est ignorée plutôt que transmise au serveur. */
-function parseEnum<T extends TaskStatus | TaskPriority | TaskView>(value: string | null, allowed: readonly T[]): T | null {
+function parseEnum<T extends TaskStatus | TaskPriority | TaskView | TaskDueFilter | TaskSortField>(value: string | null, allowed: readonly T[]): T | null {
   return value !== null && (allowed as readonly string[]).includes(value) ? (value as T) : null
 }

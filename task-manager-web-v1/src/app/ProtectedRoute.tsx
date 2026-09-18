@@ -26,8 +26,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    // La page demandée est mémorisée pour y revenir après la connexion.
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    // La page demandée est mémorisée pour y revenir après la connexion, avec ses filtres
+    // et sa vue (?view=table&status=DONE…).
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   }
 
   return children
