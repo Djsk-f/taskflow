@@ -5,9 +5,9 @@ se connecte, puis gère **ses** tâches — création, modification, suppression
 filtres et pagination — dans une interface responsive.
 
 - **API** : Java 21 · Spring Boot 4 · Spring Security + JWT · JPA / Hibernate · MySQL 8 · Flyway
-- **Interface** : React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Radix) · TanStack Query
+- **Interface** : React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Radix) · TanStack Query · dnd-kit
 
-![Liste des tâches](docs/screenshots/tasks-desktop.png)
+![Tableau Kanban](docs/screenshots/tasks-kanban.png)
 
 ---
 
@@ -35,12 +35,18 @@ filtres et pagination — dans une interface responsive.
 | Compte | Inscription, connexion par JWT, session restaurée au rechargement, déconnexion |
 | Profil | Modification du nom et de l'email, changement de mot de passe (mot de passe actuel exigé) |
 | Tâches | Création, modification et suppression (avec confirmation) — titre, description, statut, priorité, échéance |
+| Kanban | Vue par défaut : une colonne par statut avec compteur ; **glisser-déposer** à la souris, au doigt ou au clavier pour changer le statut ; `+` pour créer directement dans une colonne ; menu « Déplacer vers » sur chaque carte |
+| Vues | **Kanban · Tableau · Liste**, mémorisées dans l'URL avec les filtres |
+| Tableau de bord | Chiffres clés, répartition par statut, tâches ouvertes par priorité, échéances de la semaine |
+| Notifications | Cloche de l'en-tête : tâches en retard ou à échéance dans les 24 h |
+| Mode sombre | Interrupteur dans la barre latérale ; suit la préférence du système par défaut, choix mémorisé |
 | Liste | Uniquement les tâches de l'utilisateur connecté, les plus récentes d'abord |
 | Recherche | Insensible à la casse, sur le titre **et** la description, déclenchée 300 ms après la frappe |
 | Filtres | Par statut (`À faire`, `En cours`, `En revue`, `Terminé`) et par priorité (`Basse`, `Moyenne`, `Haute`), cumulables avec la recherche |
 | Pagination | 10 tâches par page, « x–y sur N », boutons désactivés aux extrémités |
 | Erreurs | Format d'erreur unique côté API ; messages du serveur affichés sous les champs ou dans le formulaire ; écran « Réessayer » si le serveur est injoignable |
-| Responsive | Tableau sur desktop, cartes empilées et menu en tiroir sur mobile ; cibles tactiles ≥ 40 px |
+| Responsive | Colonnes Kanban défilantes et menu en tiroir sur mobile, tableau remplacé par des cartes ; cibles tactiles ≥ 40 px |
+| Accessibilité | Navigation complète au clavier, focus rendu à la fermeture des fenêtres, annonces vocales du glisser-déposer, contrastes de texte ≥ 4,5:1 (WCAG AA) en clair comme en sombre |
 
 Les filtres et la page courante sont portés par l'URL : un lien filtré se partage et le
 bouton « retour » du navigateur fonctionne. Une échéance dépassée est signalée en rouge.
@@ -62,6 +68,7 @@ bouton « retour » du navigateur fonctionne. Une échéance dépassée est sign
 | Outillage | Vite | 8 |
 | Styles | Tailwind CSS | 4 |
 | Composants | shadcn/ui sur Radix UI, icônes lucide-react | — |
+| Glisser-déposer | dnd-kit | 6 |
 | État serveur | TanStack Query | 5 |
 | Formulaires | react-hook-form + Zod | 7 / 4 |
 | Routage / HTTP | React Router, axios | 7 / 1 |
@@ -241,6 +248,9 @@ l'en-tête `Authorization: Bearer <jeton>`.
 | `POST` | `/tasks` | `201` | Crée une tâche |
 | `GET` | `/tasks/{id}` | `200` | Détail d'une tâche |
 | `PUT` | `/tasks/{id}` | `200` | Remplace les champs modifiables d'une tâche |
+| `PATCH` | `/tasks/{id}/status` | `200` | Change uniquement le statut (`{"status": "DONE"}`) — glisser-déposer du Kanban |
+| `GET` | `/tasks/stats` | `200` | Totaux par statut, tâches ouvertes par priorité, en retard, à rendre sous 7 jours |
+| `GET` | `/tasks/due?withinHours=24` | `200` | Tâches non terminées en retard ou à échéance dans la fenêtre (1 h à 30 jours), 20 au plus |
 | `DELETE` | `/tasks/{id}` | `204` | Supprime une tâche |
 | `GET` | `/actuator/health` | `200` | État de l'application — **public**, hors `/api/v1` |
 
@@ -312,6 +322,7 @@ taskflow/
 auth/        inscription, connexion                 (controller → service → DTO)
 user/        profil, mot de passe                   (entité, repository, service, mapper, controller)
 task/        CRUD, recherche, filtres, pagination   (+ Specifications, PageRequests)
+             statistiques et échéances              (TaskInsightService, lectures agrégées)
 security/    JwtService, filtre JWT, @CurrentUser, réponses 401/403 au format commun
 config/      SecurityConfig, CorsConfig
 common/      PageResponse, format d'erreur, GlobalExceptionHandler, Auditable
@@ -329,12 +340,14 @@ src/
 ├── app/          routes protégées / invitées, client TanStack Query
 ├── features/
 │   ├── auth/     contexte d'authentification, pages Connexion et Inscription
-│   ├── tasks/    page Tâches, tableau, filtres, modales, taskMeta (libellés et couleurs)
+│   ├── tasks/    page Tâches (Kanban, tableau, liste), filtres, modales, cloche, taskMeta
+│   ├── dashboard/ tableau de bord
 │   └── profile/  page Profil, formulaires
 ├── shared/
 │   ├── api/      client HTTP unique, traduction des erreurs
 │   ├── ui/       primitives shadcn/ui (Radix)
 │   ├── components/ formulaires, états vides/erreur/chargement, coquille (sidebar, en-tête)
+│   ├── theme/    mode sombre
 │   └── hooks/, lib/, config/, types/
 └── styles/       jetons de couleur du design system
 ```
@@ -360,6 +373,10 @@ de jetons de couleur.
 | **shadcn/ui sur Radix** | Modales, menus et listes accessibles (focus, clavier, ARIA) ; le code des composants est dans le dépôt et reste modifiable | Réécrire ces composants à la main |
 | **react-hook-form + Zod** | Le schéma Zod est l'unique source des règles de saisie, alignées sur la validation serveur | Validation dupliquée dans chaque formulaire |
 | **Filtres dans l'URL** | Liens partageables, historique du navigateur, aucun second état à synchroniser | État local de composant |
+| **dnd-kit pour le Kanban** | Glisser-déposer à la souris, au doigt **et au clavier**, avec annonces pour lecteurs d'écran | react-beautiful-dnd (abandonné), glisser-déposer HTML5 natif (inaccessible au clavier) |
+| **Déplacement optimiste** | La carte change de colonne immédiatement ; elle revient à sa place avec un message si le serveur refuse | Attendre la réponse avant de bouger la carte |
+| **`PATCH /status` dédié** | Un déplacement n'envoie que le statut : pas de risque d'écraser un champ modifié entre-temps | Renvoyer toute la tâche avec `PUT` |
+| **Palette de statuts validée** | Couleurs de la maquette ré-étagées pour rester distinctes en cas de daltonisme, en clair comme en sombre ; le texte coloré a ses propres nuances contrastées | Reprendre les couleurs de la maquette telles quelles |
 | **Un seul `.env` racine** | Une seule source de configuration pour Docker, l'API et Vite | Un fichier par module |
 | **nginx relaie `/api` dans l'image de l'interface** | Même origine pour le navigateur : pas de CORS à ouvrir, un seul port exposé, image indépendante de l'adresse de l'API | Appeler l'API sur un autre port et élargir le CORS |
 
@@ -381,7 +398,7 @@ de jetons de couleur.
 
 ## Tests et qualité
 
-**API** — 28 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+**API** — 31 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
 
 ```bash
 cd task-manager-api-v1
@@ -390,8 +407,8 @@ cd task-manager-api-v1
 
 | Classe | Tests | Ce qui est vérifié |
 |--------|-------|--------------------|
-| `TaskRepositoryIsolationTest` | 6 | Le propriétaire retrouve sa tâche ; un autre utilisateur ne peut ni la lire, ni la supprimer, ni la trouver par recherche ou filtre ; horodatage automatique |
-| `TaskApiSecurityTest` | 4 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe, liste limitée au demandeur, statuts et format d'erreur conservés |
+| `TaskRepositoryIsolationTest` | 8 | Le propriétaire retrouve sa tâche ; un autre utilisateur ne peut ni la lire, ni la supprimer, ni la trouver par recherche ou filtre ; statistiques et échéances limitées au propriétaire, tâches terminées exclues ; horodatage automatique |
+| `TaskApiSecurityTest` | 5 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe (changement de statut compris, sans effet), liste et statistiques limitées au demandeur, statuts et format d'erreur conservés |
 | `JwtServiceTest` | 8 | Jeton relu correctement ; jeton altéré, signé par une autre clé, expiré ou illisible refusé ; secret absent ou trop court refusé ; durée conforme |
 | `TaskServiceTest` | 4 | Tâche rattachée à l'utilisateur authentifié ; tâche d'autrui introuvable en lecture et en suppression, modification sans aucune écriture |
 | `AuthServiceTest` | 3 | Email en double refusé, email normalisé et mot de passe haché, message générique sur identifiants invalides |
@@ -413,9 +430,17 @@ comptes, navigation au clavier, largeurs 375, 768 et 1440 px.
 
 ## Captures d'écran
 
-| Connexion | Modification d'une tâche | Mobile |
-|-----------|--------------------------|--------|
-| ![Connexion](docs/screenshots/login.png) | ![Modale d'édition](docs/screenshots/task-dialog.png) | ![Vue mobile](docs/screenshots/tasks-mobile.png) |
+| Tableau de bord | Mode sombre |
+|-----------------|-------------|
+| ![Tableau de bord](docs/screenshots/dashboard.png) | ![Kanban en mode sombre](docs/screenshots/tasks-kanban-dark.png) |
+
+| Vue Tableau | Modification d'une tâche |
+|-------------|--------------------------|
+| ![Vue Tableau](docs/screenshots/tasks-table.png) | ![Modale d'édition](docs/screenshots/task-dialog.png) |
+
+| Mobile | Connexion |
+|--------|-----------|
+| ![Kanban sur mobile](docs/screenshots/tasks-mobile.png) | ![Connexion](docs/screenshots/login.png) |
 
 ---
 
@@ -429,10 +454,14 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
 - **Pas de refresh token** : la session expire au bout de 24 h, il faut se reconnecter.
 - **Pas de tests automatisés côté interface** : vérifications faites dans le navigateur.
   Piste : Vitest + Testing Library, puis Playwright pour les parcours.
-- **Bundle JavaScript en un seul fichier** (~690 kB, ~217 kB gzip). Piste : découpage par route.
-- **Non réalisés (bonus)** : vue Kanban avec glisser-déposer, mode sombre, statistiques,
-  intégration continue, déploiement, documentation Swagger.
+- **Bundle JavaScript en un seul fichier** (~770 kB, ~240 kB gzip). Piste : découpage par route.
+- **Kanban limité à 50 cartes par colonne** : au-delà, un lien ouvre la vue Tableau filtrée
+  sur le statut (paginée). Pas d'ordre manuel des cartes au sein d'une colonne.
+- **Notifications calculées à la demande** : rafraîchies à chaque modification et chaque
+  minute, sans notification push ni e-mail.
 - **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
-  l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`. Les entrées « Kanban »,
-  « Réglages » et « Mode sombre » sont visibles dans l'interface mais désactivées
-  (« bientôt »), pour ne jamais présenter un contrôle qui ne fonctionne pas.
+  l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`.
+- **Non réalisés (bonus)** : intégration continue, déploiement public, documentation Swagger.
+- **Éléments de la maquette volontairement non repris** : avatars d'équipe, intégrations
+  (Slack, GitHub, Gmail…), messagerie et images de couverture des cartes. TaskFlow est
+  mono-utilisateur ; les reproduire aurait donné des contrôles décoratifs sans fonction.
