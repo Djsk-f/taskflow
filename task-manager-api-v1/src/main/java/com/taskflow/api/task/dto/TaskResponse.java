@@ -12,5 +12,6 @@ public record TaskResponse(
         TaskPriority priority,
         Instant dueDate,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        int timeSpentMinutes) {
 }

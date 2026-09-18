@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Formula;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,4 +58,12 @@ public class Task extends Auditable {
 
     @Column(name = "due_date")
     private Instant dueDate;
+
+    /**
+     * Temps total saisi sur la tâche, en minutes, calculé par la base à chaque lecture
+     * (sous-requête) : les listes l'obtiennent sans requête supplémentaire par tâche.
+     * Lecture seule ; vaut null sur une entité tout juste créée.
+     */
+    @Formula("(select coalesce(sum(te.duration_minutes), 0) from time_entries te where te.task_id = id)")
+    private Integer timeSpentMinutes;
 }

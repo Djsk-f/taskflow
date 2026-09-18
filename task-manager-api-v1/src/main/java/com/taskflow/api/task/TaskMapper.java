@@ -41,6 +41,7 @@ public final class TaskMapper {
                 task.getPriority(),
                 task.getDueDate(),
                 task.getCreatedAt(),
-                task.getUpdatedAt());
+                task.getUpdatedAt(),
+                task.getTimeSpentMinutes() == null ? 0 : task.getTimeSpentMinutes());
     }
 }
