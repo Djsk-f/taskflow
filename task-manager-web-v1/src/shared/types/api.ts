@@ -12,6 +12,7 @@ export type ApiErrorCode =
   | 'METHOD_NOT_ALLOWED'
   | 'UNSUPPORTED_MEDIA_TYPE'
   | 'EMAIL_ALREADY_USED'
+  | 'TOO_MANY_REQUESTS'
   | 'INTERNAL_ERROR'
 
 export type ApiFieldError = {

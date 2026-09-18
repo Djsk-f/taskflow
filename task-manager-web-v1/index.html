@@ -6,15 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TaskFlow — application de gestion de tâches personnelles." />
     <title>TaskFlow — Gestion de tâches</title>
-    <script>
-      // Thème appliqué avant le premier rendu : choix mémorisé, sinon préférence du système.
-      try {
-        var theme = localStorage.getItem('taskflow.theme')
-        if (theme === 'dark' || (!theme && matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark')
-        }
-      } catch (error) {}
-    </script>
+    <!-- Script bloquant : applique le thème avant le premier rendu (pas de flash).
+         Fichier séparé plutôt qu'en ligne : la CSP de nginx n'autorise que script-src 'self'. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
