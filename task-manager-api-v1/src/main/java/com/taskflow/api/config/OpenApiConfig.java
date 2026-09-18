@@ -62,7 +62,8 @@ public class OpenApiConfig {
                 .addTagsItem(new Tag().name("Authentification").description("Inscription et connexion : routes publiques qui délivrent le jeton JWT."))
                 .addTagsItem(new Tag().name("Profil").description("Profil de l'utilisateur du jeton (jamais un identifiant passé dans l'URL)."))
                 .addTagsItem(new Tag().name("Tâches").description("Tâches de l'utilisateur du jeton. La tâche d'un autre utilisateur est introuvable (404), jamais « interdite »."))
-                .addTagsItem(new Tag().name("Feuilles de temps").description("Temps passé par tâche et par jour. Une saisie ne peut viser qu'une tâche de l'utilisateur."));
+                .addTagsItem(new Tag().name("Feuilles de temps").description("Temps passé par tâche et par jour. Une saisie ne peut viser qu'une tâche de l'utilisateur."))
+                .addTagsItem(new Tag().name("Notifications").description("Rappels générés par le serveur : échéance sous 24 h, sous 1 h, retard. Chacun ne voit que les siens."));
     }
 
     /**

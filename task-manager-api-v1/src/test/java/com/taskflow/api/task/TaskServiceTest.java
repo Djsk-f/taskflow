@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.taskflow.api.common.exception.ResourceNotFoundException;
+import com.taskflow.api.notification.NotificationService;
 import com.taskflow.api.task.dto.TaskRequest;
 import com.taskflow.api.user.User;
 import com.taskflow.api.user.UserRepository;
@@ -32,6 +33,9 @@ class TaskServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private TaskService taskService;

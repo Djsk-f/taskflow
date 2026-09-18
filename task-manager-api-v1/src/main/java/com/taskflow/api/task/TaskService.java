@@ -2,6 +2,7 @@ package com.taskflow.api.task;
 
 import com.taskflow.api.common.dto.PageResponse;
 import com.taskflow.api.common.exception.ResourceNotFoundException;
+import com.taskflow.api.notification.NotificationService;
 import com.taskflow.api.task.dto.TaskFilter;
 import com.taskflow.api.task.dto.TaskRequest;
 import com.taskflow.api.task.dto.TaskResponse;
@@ -25,6 +26,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public PageResponse<TaskResponse> search(Long userId, TaskFilter filter, TaskSort sort, Pageable pageable) {
         return PageResponse.from(
@@ -54,7 +56,9 @@ public class TaskService {
         TaskMapper.applyTo(request, task);
         // saveAndFlush et non save : l'horodatage d'audit est écrit par Hibernate au flush.
         // Sans flush explicite, la réponse renverrait l'updatedAt d'avant la modification.
-        return TaskMapper.toResponse(taskRepository.saveAndFlush(task));
+        Task saved = taskRepository.saveAndFlush(task);
+        notificationService.discardObsolete(saved);
+        return TaskMapper.toResponse(saved);
     }
 
     /** Changement de statut seul (glisser-déposer du Kanban) : les autres champs sont intacts. */
@@ -62,7 +66,9 @@ public class TaskService {
     public TaskResponse updateStatus(Long taskId, Long userId, TaskStatusRequest request) {
         Task task = requireOwnedTask(taskId, userId);
         task.setStatus(request.status());
-        return TaskMapper.toResponse(taskRepository.saveAndFlush(task));
+        Task saved = taskRepository.saveAndFlush(task);
+        notificationService.discardObsolete(saved);
+        return TaskMapper.toResponse(saved);
     }
 
     @Transactional

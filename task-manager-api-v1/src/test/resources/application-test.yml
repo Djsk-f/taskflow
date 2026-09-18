@@ -16,6 +16,9 @@ app:
     expiration-ms: 3600000
   cors:
     allowed-origins: http://localhost:5173
+  # Pas de passage planifié pendant les tests : ils appellent le générateur eux-mêmes.
+  notifications:
+    enabled: false
 
 logging:
   level:
