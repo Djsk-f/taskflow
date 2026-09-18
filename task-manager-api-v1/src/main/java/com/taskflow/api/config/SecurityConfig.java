@@ -22,7 +22,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Chaîne de sécurité unique de l'application : sans état, refus par défaut.
- * Seules l'inscription, la connexion et la sonde de santé sont publiques (INV-11).
+ * Seules l'inscription, la connexion, la sonde de santé et la documentation de l'API
+ * (qui ne contient aucune donnée) sont publiques (INV-11).
  */
 @Configuration
 @EnableWebSecurity
@@ -33,7 +34,11 @@ public class SecurityConfig {
             "/api/v1/auth/register",
             "/api/v1/auth/login",
             "/actuator/health",
-            "/actuator/health/**"
+            "/actuator/health/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
