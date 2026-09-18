@@ -1,0 +1,396 @@
+# TaskFlow
+
+Application web de gestion de tâches personnelles : chaque utilisateur crée un compte,
+se connecte, puis gère **ses** tâches — création, modification, suppression, recherche,
+filtres et pagination — dans une interface responsive.
+
+- **API** : Java 21 · Spring Boot 4 · Spring Security + JWT · JPA / Hibernate · MySQL 8 · Flyway
+- **Interface** : React 19 · TypeScript · Vite · Tailwind CSS 4 · shadcn/ui (Radix) · TanStack Query
+
+![Liste des tâches](docs/screenshots/tasks-desktop.png)
+
+---
+
+## Sommaire
+
+1. [Fonctionnalités](#fonctionnalités)
+2. [Stack technique](#stack-technique)
+3. [Prérequis](#prérequis)
+4. [Installation et lancement](#installation-et-lancement)
+5. [Variables d'environnement](#variables-denvironnement)
+6. [API REST](#api-rest)
+7. [Architecture](#architecture)
+8. [Choix techniques et justifications](#choix-techniques-et-justifications)
+9. [Sécurité](#sécurité)
+10. [Tests et qualité](#tests-et-qualité)
+11. [Captures d'écran](#captures-décran)
+12. [Limites connues](#limites-connues)
+
+---
+
+## Fonctionnalités
+
+| Domaine | Ce que fait l'application |
+|---------|---------------------------|
+| Compte | Inscription, connexion par JWT, session restaurée au rechargement, déconnexion |
+| Profil | Modification du nom et de l'email, changement de mot de passe (mot de passe actuel exigé) |
+| Tâches | Création, modification et suppression (avec confirmation) — titre, description, statut, priorité, échéance |
+| Liste | Uniquement les tâches de l'utilisateur connecté, les plus récentes d'abord |
+| Recherche | Insensible à la casse, sur le titre **et** la description, déclenchée 300 ms après la frappe |
+| Filtres | Par statut (`À faire`, `En cours`, `En revue`, `Terminé`) et par priorité (`Basse`, `Moyenne`, `Haute`), cumulables avec la recherche |
+| Pagination | 10 tâches par page, « x–y sur N », boutons désactivés aux extrémités |
+| Erreurs | Format d'erreur unique côté API ; messages du serveur affichés sous les champs ou dans le formulaire ; écran « Réessayer » si le serveur est injoignable |
+| Responsive | Tableau sur desktop, cartes empilées et menu en tiroir sur mobile ; cibles tactiles ≥ 40 px |
+
+Les filtres et la page courante sont portés par l'URL : un lien filtré se partage et le
+bouton « retour » du navigateur fonctionne. Une échéance dépassée est signalée en rouge.
+
+---
+
+## Stack technique
+
+| Couche | Technologie | Version |
+|--------|-------------|---------|
+| Langage serveur | Java | 21 |
+| Framework | Spring Boot (Web MVC, Security, Data JPA, Validation, Actuator) | 4.1.1 |
+| Jetons | JJWT | 0.12.6 |
+| Base de données | MySQL (via Docker) | 8.4 |
+| Migrations | Flyway | géré par Spring Boot |
+| Tests serveur | JUnit 5, Mockito, Spring Boot Test, H2 (en mémoire) | gérés par Spring Boot |
+| Interface | React | 19 |
+| Langage client | TypeScript | 6 |
+| Outillage | Vite | 8 |
+| Styles | Tailwind CSS | 4 |
+| Composants | shadcn/ui sur Radix UI, icônes lucide-react | — |
+| État serveur | TanStack Query | 5 |
+| Formulaires | react-hook-form + Zod | 7 / 4 |
+| Routage / HTTP | React Router, axios | 7 / 1 |
+
+---
+
+## Prérequis
+
+| Outil | Version | Vérification |
+|-------|---------|--------------|
+| JDK | **21** | `java -version` |
+| Node.js | **20.19+** ou **22.12+** (exigé par Vite 8) | `node --version` |
+| Docker + Docker Compose v2 | récent | `docker compose version` |
+
+Maven n'est pas nécessaire : le dépôt fournit le wrapper `mvnw`.
+Ports utilisés : **3306** (MySQL), **8080** (API), **5173** (interface).
+
+---
+
+## Installation et lancement
+
+Toutes les commandes partent de la racine du dépôt.
+
+### 1. Configurer l'environnement
+
+```bash
+cp .env.example .env
+```
+
+Générer un secret JWT (48 octets aléatoires, en base64) :
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+```
+
+puis remplacer la valeur de `JWT_SECRET` dans `.env` par le résultat.
+Les autres valeurs par défaut fonctionnent telles quelles en local.
+
+> L'API **refuse de démarrer** si `JWT_SECRET` est absent ou trop court : c'est voulu.
+
+### 2. Démarrer MySQL
+
+```bash
+docker compose up -d
+```
+
+Attendre que le conteneur soit `healthy` (une trentaine de secondes au premier lancement) :
+
+```bash
+docker compose ps
+```
+
+> Le port 3306 est déjà pris sur votre machine ? Mettre par exemple `DB_PORT=3307` dans
+> `.env` : Docker et l'API lisent tous deux cette variable.
+
+### 3. Démarrer l'API
+
+```bash
+cd task-manager-api-v1
+./mvnw spring-boot:run          # Windows : mvnw.cmd spring-boot:run
+```
+
+L'API lit directement le fichier `.env` de la racine : aucune variable à exporter.
+Au premier démarrage, Flyway crée le schéma. Vérification :
+
+```bash
+curl http://localhost:8080/actuator/health     # {"status":"UP", ...}
+```
+
+### 4. Démarrer l'interface
+
+Dans un second terminal :
+
+```bash
+cd task-manager-web-v1
+npm ci
+npm run dev
+```
+
+Ouvrir **http://localhost:5173**, puis **créer un compte** : la base démarre vide.
+
+> L'interface doit tourner sur le port 5173, seule origine autorisée par défaut
+> (`APP_CORS_ALLOWED_ORIGINS`). Si Vite annonce un autre port, libérer le 5173.
+
+### Build de production de l'interface
+
+```bash
+cd task-manager-web-v1
+npm run build        # vérification TypeScript puis build dans dist/
+npm run preview      # sert le build sur http://localhost:4173 (ajouter cette origine à APP_CORS_ALLOWED_ORIGINS)
+```
+
+### À propos de `docker-compose.yml`
+
+Il lance **MySQL uniquement**. L'API et l'interface se lancent localement (étapes 3 et 4),
+ce qui garde le rechargement à chaud pendant le développement. La conteneurisation
+complète est listée dans les [limites connues](#limites-connues).
+
+---
+
+## Variables d'environnement
+
+Un seul fichier `.env` à la racine, lu par Docker Compose, par l'API et par Vite.
+
+| Variable | Défaut (`.env.example`) | Utilisée par | Rôle |
+|----------|-------------------------|--------------|------|
+| `MYSQL_DATABASE` | `taskflow` | Docker, API | Nom de la base |
+| `MYSQL_USER` | `taskflow` | Docker, API | Utilisateur applicatif |
+| `MYSQL_PASSWORD` | `change-me-local` | Docker, API | Mot de passe applicatif |
+| `MYSQL_ROOT_PASSWORD` | `change-me-root` | Docker | Mot de passe root du conteneur |
+| `DB_HOST` | `localhost` | API | Hôte MySQL |
+| `DB_PORT` | `3306` | Docker, API | Port MySQL publié (et utilisé par l'URL JDBC) |
+| `SERVER_PORT` | `8080` | API | Port HTTP de l'API |
+| `JWT_SECRET` | *à générer* | API | Clé de signature HMAC, base64, 48 octets minimum |
+| `JWT_EXPIRATION_MS` | `86400000` | API | Durée de validité du jeton (24 h) |
+| `APP_CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | API | Origines autorisées, séparées par des virgules |
+| `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Interface | URL de base de l'API |
+
+Seules les variables préfixées `VITE_` sont exposées au navigateur : les identifiants
+MySQL et le secret JWT ne peuvent pas se retrouver dans le bundle (vérifié sur le build).
+
+---
+
+## API REST
+
+Base : `http://localhost:8080/api/v1`. Sauf mention contraire, chaque route exige
+l'en-tête `Authorization: Bearer <jeton>`.
+
+| Méthode | Route | Succès | Description |
+|---------|-------|--------|-------------|
+| `POST` | `/auth/register` | `201` | Crée un compte, renvoie jeton + profil — **public** |
+| `POST` | `/auth/login` | `200` | Authentifie, renvoie jeton + profil — **public** |
+| `GET` | `/users/me` | `200` | Profil de l'utilisateur du jeton |
+| `PATCH` | `/users/me` | `200` | Modifie `fullName` et/ou `email` |
+| `PUT` | `/users/me/password` | `204` | Change le mot de passe (`currentPassword`, `newPassword`) |
+| `GET` | `/tasks` | `200` | Liste paginée, filtrée, des tâches de l'utilisateur |
+| `POST` | `/tasks` | `201` | Crée une tâche |
+| `GET` | `/tasks/{id}` | `200` | Détail d'une tâche |
+| `PUT` | `/tasks/{id}` | `200` | Remplace les champs modifiables d'une tâche |
+| `DELETE` | `/tasks/{id}` | `204` | Supprime une tâche |
+| `GET` | `/actuator/health` | `200` | État de l'application — **public**, hors `/api/v1` |
+
+**Paramètres de `GET /tasks`**
+
+| Paramètre | Défaut | Règle |
+|-----------|--------|-------|
+| `search` | — | Insensible à la casse, sur `title` et `description` |
+| `status` | — | `TODO` · `IN_PROGRESS` · `IN_REVIEW` · `DONE` |
+| `priority` | — | `LOW` · `MEDIUM` · `HIGH` |
+| `page` | `0` | Entier ≥ 0 |
+| `size` | `10` | 1 à 50 (au-delà, ramené à 50) |
+| `sort` | `createdAt,desc` | Champs autorisés : `createdAt`, `dueDate`, `title`, `priority`, `status` |
+
+Réponse paginée : `content`, `page`, `size`, `totalElements`, `totalPages`, `first`, `last`.
+
+**Format d'erreur unique** — toutes les erreurs, sans exception :
+
+```json
+{
+  "timestamp": "2026-09-17T18:42:11.123Z",
+  "status": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "La requête contient des champs invalides.",
+  "path": "/api/v1/tasks",
+  "fieldErrors": [{ "field": "title", "message": "Le titre est obligatoire." }]
+}
+```
+
+| `code` | HTTP | Cas |
+|--------|------|-----|
+| `VALIDATION_ERROR` | 400 | Corps invalide, valeur d'enum inconnue, paramètre mal typé |
+| `INVALID_CREDENTIALS` | 401 | Identifiants incorrects, mot de passe actuel erroné |
+| `UNAUTHORIZED` | 401 | Jeton absent, expiré ou altéré |
+| `FORBIDDEN` | 403 | Accès refusé |
+| `RESOURCE_NOT_FOUND` | 404 | Ressource inexistante **ou appartenant à un autre utilisateur** |
+| `METHOD_NOT_ALLOWED` | 405 | Verbe HTTP non supporté |
+| `EMAIL_ALREADY_USED` | 409 | Email déjà associé à un compte |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | Corps non JSON |
+| `INTERNAL_ERROR` | 500 | Erreur inattendue — message neutre, aucune trace technique exposée |
+
+Exemple (avec `jq` pour extraire le jeton) :
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"vous@exemple.com","password":"VotreMotDePasse"}' | jq -r .accessToken)
+
+curl -s "http://localhost:8080/api/v1/tasks?status=IN_PROGRESS&search=api" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## Architecture
+
+```
+taskflow/
+├── task-manager-api-v1/          API Spring Boot
+├── task-manager-web-v1/          Interface React
+├── docs/screenshots/             Captures du README
+├── docker-compose.yml            MySQL 8.4
+└── .env.example                  Modèle de configuration partagé
+```
+
+**API** — organisée par fonctionnalité (`com.taskflow.api`), une couche par responsabilité :
+
+```
+auth/        inscription, connexion                 (controller → service → DTO)
+user/        profil, mot de passe                   (entité, repository, service, mapper, controller)
+task/        CRUD, recherche, filtres, pagination   (+ Specifications, PageRequests)
+security/    JwtService, filtre JWT, @CurrentUser, réponses 401/403 au format commun
+config/      SecurityConfig, CorsConfig
+common/      PageResponse, format d'erreur, GlobalExceptionHandler, Auditable
+```
+
+Le contrôleur ne contient aucune logique métier ; le service porte les règles et les
+transactions ; les entités JPA ne sortent jamais de la couche service (DTO en entrée comme
+en sortie) ; l'identifiant de l'utilisateur vient **toujours** du jeton, jamais de l'URL
+ni du corps de la requête.
+
+**Interface** — organisée par fonctionnalité, avec une couche partagée :
+
+```
+src/
+├── app/          routes protégées / invitées, client TanStack Query
+├── features/
+│   ├── auth/     contexte d'authentification, pages Connexion et Inscription
+│   ├── tasks/    page Tâches, tableau, filtres, modales, taskMeta (libellés et couleurs)
+│   └── profile/  page Profil, formulaires
+├── shared/
+│   ├── api/      client HTTP unique, traduction des erreurs
+│   ├── ui/       primitives shadcn/ui (Radix)
+│   ├── components/ formulaires, états vides/erreur/chargement, coquille (sidebar, en-tête)
+│   └── hooks/, lib/, config/, types/
+└── styles/       jetons de couleur du design system
+```
+
+Chaque règle existe à un seul endroit : un client HTTP, une traduction des erreurs, un
+rendu de champ de formulaire, une table des statuts et priorités (`taskMeta.ts`), un jeu
+de jetons de couleur.
+
+---
+
+## Choix techniques et justifications
+
+| Choix | Pourquoi | Alternative écartée |
+|-------|----------|---------------------|
+| **Flyway** + `ddl-auto=validate` | Schéma versionné et reproductible ; Hibernate vérifie au démarrage que le code et la base concordent | `ddl-auto=update` : modifications silencieuses, non versionnées |
+| **Filtrage par `Specification` JPA** | Recherche, statut et priorité se combinent sans multiplier les méthodes ; le filtre « propriétaire » est la base de chaque requête, un oubli est donc impossible | Une méthode de repository par combinaison |
+| **`404` pour la tâche d'autrui** | Un `403` confirmerait que la ressource existe ; un `404` ne révèle rien | `403 Forbidden` |
+| **Enveloppe de pagination maison** (`PageResponse`) | Contrat JSON stable et minimal, indépendant de la sérialisation interne de Spring | Exposer `Page<T>` de Spring Data |
+| **JWT sans état, 24 h, sans refresh token** | Répond au besoin « connexion JWT » simplement et de façon explicable | Refresh token, cookie `HttpOnly` + CSRF (voir limites) |
+| **`GlobalExceptionHandler` étendant `ResponseEntityExceptionHandler`** | Conserve les bons statuts de Spring MVC (405, 415…) tout en imposant un format unique | Un gestionnaire maison qui transforme tout en 400/500 |
+| **BCrypt explicite** | Algorithme de hachage clair et assumé | `DelegatingPasswordEncoder` (préfixes, sans besoin de migration ici) |
+| **TanStack Query** | Cache, invalidation après écriture, page précédente conservée pendant le chargement — sans code maison | État serveur géré à la main dans des `useEffect` |
+| **shadcn/ui sur Radix** | Modales, menus et listes accessibles (focus, clavier, ARIA) ; le code des composants est dans le dépôt et reste modifiable | Réécrire ces composants à la main |
+| **react-hook-form + Zod** | Le schéma Zod est l'unique source des règles de saisie, alignées sur la validation serveur | Validation dupliquée dans chaque formulaire |
+| **Filtres dans l'URL** | Liens partageables, historique du navigateur, aucun second état à synchroniser | État local de composant |
+| **Un seul `.env` racine** | Une seule source de configuration pour Docker, l'API et Vite | Un fichier par module |
+
+---
+
+## Sécurité
+
+- **Isolation des données** : toutes les requêtes de tâches sont filtrées par propriétaire
+  **au niveau du repository** (en SQL, pas en mémoire). Vérifié par des tests automatisés
+  et par des appels croisés entre deux comptes.
+- **Mots de passe** hachés avec BCrypt ; jamais renvoyés par l'API, même hachés.
+- **JWT** signé en HMAC-SHA-384, clé de 48 octets minimum ; l'API refuse de démarrer sans secret valide.
+- **Tout est fermé par défaut** : seules l'inscription, la connexion et `/actuator/health` sont publiques.
+- **CORS** restreint aux origines configurées.
+- **Aucune fuite technique** : ni trace d'exécution ni message d'exception interne dans les réponses.
+- **Aucun secret dans le dépôt** : `.env` est ignoré par Git, seul `.env.example` est versionné.
+
+---
+
+## Tests et qualité
+
+**API** — 28 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+
+```bash
+cd task-manager-api-v1
+./mvnw test
+```
+
+| Classe | Tests | Ce qui est vérifié |
+|--------|-------|--------------------|
+| `TaskRepositoryIsolationTest` | 6 | Le propriétaire retrouve sa tâche ; un autre utilisateur ne peut ni la lire, ni la supprimer, ni la trouver par recherche ou filtre ; horodatage automatique |
+| `TaskApiSecurityTest` | 4 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe, liste limitée au demandeur, statuts et format d'erreur conservés |
+| `JwtServiceTest` | 8 | Jeton relu correctement ; jeton altéré, signé par une autre clé, expiré ou illisible refusé ; secret absent ou trop court refusé ; durée conforme |
+| `TaskServiceTest` | 4 | Tâche rattachée à l'utilisateur authentifié ; tâche d'autrui introuvable en lecture et en suppression, modification sans aucune écriture |
+| `AuthServiceTest` | 3 | Email en double refusé, email normalisé et mot de passe haché, message générique sur identifiants invalides |
+| `GlobalExceptionHandlerTest` | 3 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP |
+
+**Interface** :
+
+```bash
+cd task-manager-web-v1
+npm run build    # vérification stricte des types (tsc) + build
+npm run lint     # oxlint
+```
+
+L'interface a été vérifiée manuellement dans un navigateur : parcours complet de
+l'inscription à la déconnexion, états de chargement / vide / erreur, isolation entre
+comptes, navigation au clavier, largeurs 375, 768 et 1440 px.
+
+---
+
+## Captures d'écran
+
+| Connexion | Modification d'une tâche | Mobile |
+|-----------|--------------------------|--------|
+| ![Connexion](docs/screenshots/login.png) | ![Modale d'édition](docs/screenshots/task-dialog.png) | ![Vue mobile](docs/screenshots/tasks-mobile.png) |
+
+---
+
+## Limites connues
+
+Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
+
+- **Jeton stocké dans `localStorage`** : exposé en cas de faille XSS, et non révocable
+  côté serveur avant son expiration (24 h). Piste : cookie `HttpOnly` + protection CSRF,
+  jeton court + refresh token avec rotation.
+- **Pas de refresh token** : la session expire au bout de 24 h, il faut se reconnecter.
+- **Pas de tests automatisés côté interface** : vérifications faites dans le navigateur.
+  Piste : Vitest + Testing Library, puis Playwright pour les parcours.
+- **Bundle JavaScript en un seul fichier** (~690 kB, ~217 kB gzip). Piste : découpage par route.
+- **Docker Compose lance uniquement MySQL** ; l'API et l'interface ne sont pas conteneurisées.
+- **Non réalisés (bonus)** : vue Kanban avec glisser-déposer, mode sombre, statistiques,
+  intégration continue, déploiement, documentation Swagger. Les entrées « Kanban »,
+  « Réglages » et « Mode sombre » sont visibles dans l'interface mais désactivées
+  (« bientôt »), pour ne jamais présenter un contrôle qui ne fonctionne pas.
