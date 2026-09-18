@@ -13,7 +13,8 @@
   --radius: 0.625rem;
 
   /* Surfaces et texte */
-  --background: #f5f7fb;
+  /* Surfaces : gris neutre sans reflet bleuté, cartes blanches qui ressortent (choix de Fidèle, variante A). */
+  --background: #f4f5f7;
   --foreground: #1a2340;
   --card: #ffffff;
   --card-foreground: #1a2340;
@@ -23,16 +24,17 @@
   /* Marque — bleu de la capture, ajusté pour un contraste de texte >= 4,5:1 (WCAG AA) */
   --primary: #4263eb;
   --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
+  --secondary: #eef1fb;
   --secondary-foreground: #3a5be0;
-  --accent: #eef2ff;
+  --accent: #eef1fb;
   --accent-foreground: #3a5be0;
 
   /* Neutres */
-  --muted: #f1f4f9;
-  --muted-foreground: #8a94a6;
-  --border: #e8ecf4;
-  --input: #e8ecf4;
+  --muted: #eceef2;
+  /* Texte secondaire : 4,9 à 5,7:1 sur toutes les surfaces claires (l'ancien #8a94a6 plafonnait à 3,1:1). */
+  --muted-foreground: #5f6778;
+  --border: #e4e6ea;
+  --input: #e4e6ea;
   --ring: #4263eb;
 
   /* Retours */
@@ -149,7 +151,7 @@
   --radius-xl: calc(var(--radius) + 6px);
   --radius-card: 1rem;
 
-  --shadow-card: 0 1px 2px rgb(26 35 64 / 0.04);
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.06);
   --shadow-card-hover: 0 8px 24px rgb(26 35 64 / 0.08);
 
   --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;

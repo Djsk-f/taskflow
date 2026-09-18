@@ -77,8 +77,9 @@ export function KanbanColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          'flex min-h-40 flex-1 flex-col gap-3 rounded-xl p-1 transition-colors',
-          isOver && 'bg-secondary/60 ring-primary/40 ring-2 ring-dashed',
+          // Bandeau gris de colonne : les cartes blanches s'en détachent (variante A).
+          'bg-muted flex min-h-40 flex-1 flex-col gap-3 rounded-2xl p-2.5 transition-colors',
+          isOver && 'bg-secondary ring-primary/40 ring-2 ring-dashed',
         )}
       >
         {isLoading &&
