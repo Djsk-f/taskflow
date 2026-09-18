@@ -49,7 +49,7 @@ en français et en anglais, en thème clair ou sombre.
 | Filtres | Bouton « Filtres » : pastilles de priorité (`Basse`, `Moyenne`, `Haute`) et de statut (`À faire`, `En cours`, `En revue`, `Terminé`), filtres actifs en étiquettes supprimables, cumulables avec la recherche |
 | Feuilles de temps | Saisie du temps passé sur une tâche (« 1h30 », « 45m », « 2 »…) ; grille hebdomadaire tâches × jours avec totaux par tâche, par jour et pour la semaine ; navigation d'une semaine à l'autre ; export CSV compatible Excel ; temps total affiché sur chaque tâche |
 | Langues | Français et anglais : langue du navigateur au premier accès, puis choix mémorisé ; les messages d'erreur de l'API suivent la langue |
-| Pagination | 10 tâches par page, « x–y sur N », boutons désactivés aux extrémités |
+| Pagination | Adaptée à chaque liste : **tableau et liste** paginés (pages numérotées, 10 / 20 / 50 par page, mémorisé dans l'URL) ; **colonnes Kanban** par lots de 10 (« Afficher 10 de plus · N restantes ») ; **échéances du tableau de bord** 5 par page ; **cloche** limitée à 5 par groupe avec accès à la liste complète ; **historique de temps** par lots de 5 ; ajout d'une tâche à la feuille de temps par **recherche** (10 suggestions) plutôt que par une longue liste |
 | Erreurs | Format d'erreur unique côté API ; messages du serveur affichés sous les champs ou dans le formulaire ; écran « Réessayer » si le serveur est injoignable |
 | Responsive | Colonnes Kanban défilantes et menu en tiroir sur mobile, tableau remplacé par des cartes ; cibles tactiles ≥ 40 px |
 | Accessibilité | Navigation complète au clavier, focus rendu à la fermeture des fenêtres, annonces vocales du glisser-déposer, contrastes de texte ≥ 4,5:1 (WCAG AA) en clair comme en sombre |
@@ -480,20 +480,23 @@ cd task-manager-api-v1
 | `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
 **Intégration continue** : à chaque push et pull request, GitHub Actions lance les tests
-de l'API, le lint et le build de l'interface, puis construit les deux images Docker
-(`.github/workflows/ci.yml`).
+de l'API, le lint, les tests et le build de l'interface, puis démarre l'application complète
+avec Docker Compose et y joue les tests Playwright (`.github/workflows/ci.yml`).
 
-**Interface** :
+**Interface** — 35 tests Vitest (logique et composants) et 4 tests de bout en bout Playwright :
 
 ```bash
 cd task-manager-web-v1
-npm run build    # vérification stricte des types (tsc) + build
-npm run lint     # oxlint
+npm test             # Vitest : durées, semaines, filtres d'URL, pagination, dictionnaires, panneau de filtres
+npm run test:e2e     # Playwright, sur l'application lancée par docker compose (http://localhost:3000)
+npm run lint         # oxlint
+npm run build        # vérification stricte des types (tsc) + build
 ```
 
-L'interface a été vérifiée manuellement dans un navigateur : parcours complet de
-l'inscription à la déconnexion, états de chargement / vide / erreur, isolation entre
-comptes, navigation au clavier, largeurs 375, 768 et 1440 px.
+Le parcours de bout en bout crée un compte, puis une tâche ; il la déplace, y saisit
+du temps, la retrouve dans la feuille de temps et la supprime. Il vérifie aussi la
+protection des pages privées, la bascule de langue et le compte de démonstration.
+Première exécution locale : `npx playwright install chromium`.
 
 ---
 
@@ -521,8 +524,6 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
   côté serveur avant son expiration (24 h). Piste : cookie `HttpOnly` + protection CSRF,
   jeton court + refresh token avec rotation.
 - **Pas de refresh token** : la session expire au bout de 24 h, il faut se reconnecter.
-- **Pas de tests automatisés côté interface** : vérifications faites dans le navigateur.
-  Piste : Vitest + Testing Library, puis Playwright pour les parcours.
 - **Poids du JavaScript** : chaque page est chargée à la demande, mais le socle commun
   (React, bibliothèques, dictionnaires) pèse encore ~565 kB (~178 kB compressé).
 - **Limitation des connexions en mémoire** : valable pour une seule instance de l'API (pas de
