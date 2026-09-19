@@ -48,7 +48,12 @@ spring:
     locale-resolver: accept-header
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Cloud Run injecte PORT ; SERVER_PORT reste pour Docker Compose et le développement local.
+  port: ${PORT:${SERVER_PORT:8080}}
+  # Requêtes en cours terminées avant l'arrêt de l'instance (nouvelle révision, mise à l'échelle).
+  shutdown: graceful
+  # Derrière un proxy (Cloud Run, nginx) : l'application voit le schéma et l'hôte d'origine.
+  forward-headers-strategy: framework
   error:
     include-stacktrace: never
     include-message: never
