@@ -132,11 +132,9 @@ test('un rappel choisi arrive dans la cloche et ouvre la tâche', async ({ page 
   await dialog.getByLabel('Date du rappel').fill(local)
   await dialog.getByRole('button', { name: 'Créer la tâche' }).click()
 
+  // Sans rechargement : le serveur pousse l'information par le flux temps réel.
   const bell = page.getByRole('button', { name: /^Notifications/ })
-  await expect(async () => {
-    await page.reload()
-    await expect(bell).toHaveAccessibleName('Notifications : 1 non lue', { timeout: 2_000 })
-  }).toPass({ timeout: 90_000, intervals: [3_000] })
+  await expect(bell).toHaveAccessibleName('Notifications : 1 non lue', { timeout: 90_000 })
 
   await bell.click()
   await page.getByRole('button', { name: /Rappel.*Rappeler le garagiste/ }).click()

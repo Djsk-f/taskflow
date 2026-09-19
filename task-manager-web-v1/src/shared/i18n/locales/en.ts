@@ -330,6 +330,10 @@ export const en: Dictionary<typeof fr> = {
         label: 'Time logging reminder',
         hint: 'On weekdays at 5 pm, if no time was logged that day.',
       },
+      emailDigest: {
+        label: 'Email digest',
+        hint: 'Every morning, the tasks that are overdue or due during the day.',
+      },
       browser: {
         label: 'Browser notifications',
         hint: 'Also show reminders outside the TaskFlow tab (on this device).',

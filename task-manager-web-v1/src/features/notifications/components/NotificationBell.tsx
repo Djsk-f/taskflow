@@ -4,6 +4,8 @@ import {
   useBrowserNotificationState,
 } from '@/features/notifications/browserNotifications'
 import { useBrowserNotifications } from '@/features/notifications/hooks/useBrowserNotifications'
+import { useLanguageSync } from '@/features/notifications/hooks/useLanguageSync'
+import { useNotificationStream } from '@/features/notifications/hooks/useNotificationStream'
 import {
   useLatestNotifications,
   useNotificationActions,
@@ -29,13 +31,16 @@ import { useNavigate } from 'react-router-dom'
  */
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
-  const { data: unread = 0 } = useUnreadCount()
-  const latest = useLatestNotifications()
+  // Temps réel quand le flux est ouvert ; interrogation toutes les 30 s sinon.
+  const streaming = useNotificationStream()
+  const { data: unread = 0 } = useUnreadCount(streaming)
+  const latest = useLatestNotifications(streaming)
   const feed = useNotificationFeed(open)
   const { markRead, markAllRead } = useNotificationActions()
   const navigate = useNavigate()
   const { t } = useTranslation()
   useBrowserNotifications(latest.data?.content)
+  useLanguageSync()
 
   const notifications = feed.data?.pages.flatMap((page) => page.content) ?? []
 

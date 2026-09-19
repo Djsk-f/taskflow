@@ -3,7 +3,10 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 
 export const NOTIFICATIONS_QUERY_KEY = 'notifications'
 
-/** Le serveur génère les rappels toutes les 30 s : la cloche se met à jour au même rythme. */
+/**
+ * Solution de repli quand le flux temps réel est coupé : le serveur génère les rappels
+ * toutes les 30 s, la cloche demande au même rythme.
+ */
 const POLL_MS = 30_000
 const PAGE_SIZE = 10
 
@@ -11,20 +14,20 @@ const PAGE_SIZE = 10
  * Badge et dernières notifications, interrogés même onglet en arrière-plan : c'est ce
  * qui permet d'afficher une notification du navigateur quand l'utilisateur est ailleurs.
  */
-export function useUnreadCount() {
+export function useUnreadCount(streaming: boolean) {
   return useQuery({
     queryKey: [NOTIFICATIONS_QUERY_KEY, 'unread-count'],
     queryFn: notificationApi.unreadCount,
-    refetchInterval: POLL_MS,
+    refetchInterval: streaming ? false : POLL_MS,
     refetchIntervalInBackground: true,
   })
 }
 
-export function useLatestNotifications() {
+export function useLatestNotifications(streaming: boolean) {
   return useQuery({
     queryKey: [NOTIFICATIONS_QUERY_KEY, 'latest'],
     queryFn: () => notificationApi.list(0, PAGE_SIZE),
-    refetchInterval: POLL_MS,
+    refetchInterval: streaming ? false : POLL_MS,
     refetchIntervalInBackground: true,
   })
 }
@@ -39,6 +42,8 @@ export function useNotificationFeed(enabled: boolean) {
     enabled,
   })
 }
+
+export const PREFERENCES_QUERY_KEY = [NOTIFICATIONS_QUERY_KEY, 'preferences']
 
 export function useNotificationActions() {
   const queryClient = useQueryClient()

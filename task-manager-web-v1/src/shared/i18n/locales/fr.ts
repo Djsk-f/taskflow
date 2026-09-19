@@ -330,6 +330,10 @@ export const fr = {
         label: 'Rappel de saisie du temps',
         hint: 'Les jours ouvrés à 17 h, si aucun temps n’a été saisi dans la journée.',
       },
+      emailDigest: {
+        label: 'Récapitulatif par e-mail',
+        hint: 'Chaque matin, la liste des tâches en retard et à rendre dans la journée.',
+      },
       browser: {
         label: 'Notifications du navigateur',
         hint: 'Afficher aussi les rappels hors de l’onglet TaskFlow (sur cet appareil).',

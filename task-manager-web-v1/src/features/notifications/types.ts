@@ -19,4 +19,7 @@ export type NotificationPreferences = {
   dueIn1h: boolean
   overdue: boolean
   dailyTimeReminder: boolean
+  emailDigest: boolean
+  /** Langue des e-mails, suivie sur celle de l'interface. */
+  language: string
 }

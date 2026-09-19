@@ -4,7 +4,7 @@ import {
   useBrowserNotificationState,
 } from '@/features/notifications/browserNotifications'
 import { notificationApi } from '@/features/notifications/api/notificationApi'
-import { NOTIFICATIONS_QUERY_KEY } from '@/features/notifications/hooks/useNotifications'
+import { PREFERENCES_QUERY_KEY } from '@/features/notifications/hooks/useNotifications'
 import type { NotificationPreferences } from '@/features/notifications/types'
 import { extractApiError } from '@/shared/api/extractApiError'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -14,8 +14,13 @@ import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-const PREFERENCE_KEYS = ['dueIn24h', 'dueIn1h', 'overdue', 'dailyTimeReminder'] as const satisfies readonly (keyof NotificationPreferences)[]
-const PREFERENCES_QUERY_KEY = [NOTIFICATIONS_QUERY_KEY, 'preferences']
+const PREFERENCE_KEYS = [
+  'dueIn24h',
+  'dueIn1h',
+  'overdue',
+  'dailyTimeReminder',
+  'emailDigest',
+] as const satisfies readonly (keyof NotificationPreferences)[]
 
 /**
  * Réglages des notifications dans le profil : rappels automatiques (enregistrés sur le
