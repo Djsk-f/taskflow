@@ -42,7 +42,7 @@ en français et en anglais, en thème clair ou sombre.
 | Terminer | Case « terminée » en un clic sur chaque carte et chaque ligne (un second clic rouvre la tâche) ; tout changement de statut propose **« Annuler »** pendant 8 s |
 | Vues | **Kanban · Grille · Liste**, mémorisées dans l'URL avec les filtres et le tri |
 | Tableau de bord | Chiffres clés cliquables (« 3 en retard » ouvre ces 3 tâches), répartition par statut, tâches ouvertes par priorité, échéances de la semaine |
-| Notifications | Rappels **générés par le serveur** toutes les 30 s : la veille de l'échéance, une heure avant, en cas de retard, au **rappel choisi sur la tâche** (1 h avant, 1 jour avant, ou date précise) et, en option, un rappel de saisie du temps (jours ouvrés, 17 h). Cloche avec non lues, « Tout marquer comme lu », clic qui ouvre la tâche ; **notifications du navigateur** sur demande quand on est dans un autre onglet ; préférences dans le profil. Jamais de doublon, et un rappel devenu faux (échéance déplacée, tâche terminée) disparaît |
+| Notifications | Rappels **générés par le serveur** toutes les 30 s : la veille de l'échéance, une heure avant, en cas de retard, au **rappel choisi sur la tâche** (1 h avant, 1 jour avant, ou date précise) et, en option, un rappel de saisie du temps (jours ouvrés, 17 h). Cloche avec non lues, « Tout marquer comme lu », clic qui ouvre la tâche ; **arrivée en temps réel** (Server-Sent Events, sans rechargement ni interrogation) ; **notifications du navigateur** sur demande quand on est dans un autre onglet ; **récapitulatif quotidien par e-mail** en option ; préférences dans le profil. Jamais de doublon, et un rappel devenu faux (échéance déplacée, tâche terminée) disparaît |
 | Mode sombre | Interrupteur dans la barre latérale ; suit la préférence du système par défaut, choix mémorisé |
 | Messages | Succès et erreurs colorés selon leur type (vert, rouge, orange, bleu) |
 | Liste et tri | Uniquement les tâches de l'utilisateur connecté, **ce qui presse d'abord** (échéance la plus proche ; sans échéance, puis terminées, en dernier) ; en-têtes de la grille cliquables (titre, statut, priorité, échéance) et menu « Trier » dans toutes les vues ; priorité et statut triés dans leur ordre métier, pas alphabétique |
@@ -97,7 +97,7 @@ Java et Node ne servent qu'au développement local (option B). Maven n'est pas n
 le dépôt fournit le wrapper `mvnw`.
 
 Ports utilisés : **3000** (application en Docker), **3306** (MySQL), **8080** (API),
-**5173** (interface en développement).
+**8025** (boîte aux lettres de démonstration), **5173** (interface en développement).
 
 ---
 
@@ -148,6 +148,9 @@ créé automatiquement au premier démarrage (35 tâches, deux semaines de feuil
 | Email | Mot de passe |
 |-------|--------------|
 | `camille.martin@taskflow.dev` | `Demo2026!` |
+
+Les e-mails (récapitulatif quotidien, si la préférence est cochée dans le profil) partent
+dans **Mailpit** et ne sortent pas de la machine : les lire sur **http://localhost:8025**.
 
 On peut aussi créer son propre compte. Pour démarrer sur une base vide : `APP_DEMO_DATA=false` dans `.env`.
 
@@ -244,7 +247,12 @@ par son nom de service (`mysql:3306`), quel que soit `DB_PORT`.
 | `APP_DEMO_DATA` | `true` | API | Crée le compte de démonstration au démarrage s'il n'existe pas |
 | `APP_DEMO_PASSWORD` | `Demo2026!` (défaut) | API | Mot de passe du compte de démonstration |
 | `APP_NOTIFICATIONS_SCAN_INTERVAL_MS` | `30000` | API | Intervalle de génération des rappels (la CI le passe à 5 s) |
-| `APP_TIMEZONE` | `Europe/Paris` | API | Fuseau du rappel de saisie du temps (17 h, jours ouvrés) |
+| `APP_TIMEZONE` | `Europe/Paris` | API | Fuseau du rappel de saisie du temps (17 h) et du récapitulatif |
+| `APP_MAIL_ENABLED` | `true` en Docker | API | Active le récapitulatif quotidien par e-mail |
+| `APP_MAIL_DIGEST_HOUR` | `7` | API | Heure locale d'envoi du récapitulatif |
+| `APP_MAIL_FROM` | `TaskFlow <no-reply@taskflow.local>` | API | Expéditeur des e-mails |
+| `MAIL_HOST` / `MAIL_PORT` | `mailpit` / `1025` | API | Serveur d'envoi. En production : votre SMTP, avec `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SMTP_AUTH=true`, `MAIL_SMTP_STARTTLS=true` |
+| `APP_PUBLIC_URL` | `http://localhost:3000` | API | Adresse mise en lien dans les e-mails |
 | `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Interface (option B) | URL de base de l'API ; l'image Docker utilise `/api/v1`, relayé par nginx |
 | `WEB_PORT` | `3000` | Docker | Port de l'application en option A |
 
@@ -298,6 +306,7 @@ l'en-tête `Authorization: Bearer <jeton>`.
 | `GET` | `/notifications/unread-count` | `200` | Nombre de non lues (`{"count": 3}`) — le badge de la cloche |
 | `PATCH` | `/notifications/{id}/read` | `204` | Marque une notification comme lue (`404` si elle n'est pas à moi) |
 | `POST` | `/notifications/read-all` | `204` | Marque tout comme lu |
+| `GET` | `/notifications/stream` | `200` | Flux temps réel (Server-Sent Events) : un événement `notifications` dès qu'un rappel est créé |
 | `GET` | `/users/me/notification-preferences` | `200` | Rappels automatiques voulus (`dueIn24h`, `dueIn1h`, `overdue`, `dailyTimeReminder`) |
 | `PUT` | `/users/me/notification-preferences` | `200` | Les modifie (les quatre champs sont requis) |
 | `GET` | `/actuator/health` | `200` | État de l'application — **public**, hors `/api/v1` |
@@ -467,7 +476,7 @@ de jetons de couleur.
 
 ## Tests et qualité
 
-**API** — 67 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
+**API** — 71 tests, exécutés sur une base H2 en mémoire (MySQL n'est pas nécessaire) :
 
 ```bash
 cd task-manager-api-v1
@@ -478,7 +487,8 @@ cd task-manager-api-v1
 |--------|-------|--------------------|
 | `TaskRepositoryIsolationTest` | 8 | Le propriétaire retrouve sa tâche ; un autre utilisateur ne peut ni la lire, ni la supprimer, ni la trouver par recherche ou filtre ; statistiques et échéances limitées au propriétaire, tâches terminées exclues ; horodatage automatique |
 | `NotificationGeneratorTest` | 8 | Fenêtres disjointes (retard, sous 1 h, sous 24 h), aucun doublon d'un passage à l'autre, tâches terminées ignorées, rappel au propriétaire de la tâche, préférences respectées, rappel choisi une seule fois, rappel de saisie du temps (jour ouvré, après 17 h, rien saisi), rappels devenus faux supprimés, lu / tout lu |
-| `NotificationApiTest` | 4 | Routes fermées sans jeton, `404` sur la notification d'autrui, lu / tout lu, échéance repoussée → rappel retiré, préférences lues, modifiées et validées |
+| `EmailDigestJobTest` | 3 | Un seul récapitulatif par personne et par jour, avec les tâches en retard et du jour ; rien avant l'heure, sans la préférence ou sans tâche ; une panne du serveur d'envoi n'interrompt pas le traitement |
+| `NotificationApiTest` | 5 | Routes fermées sans jeton, `404` sur la notification d'autrui, lu / tout lu, échéance repoussée → rappel retiré, préférences lues, modifiées et validées ; flux temps réel fermé sans jeton, ouvert avec, et refermé à la fin |
 | `TaskSortAndDueFilterTest` | 7 | Tri métier exécuté par la vraie requête (Haute → Basse, À faire → Terminé, sans échéance et terminées en dernier), pagination sans doublon ni oubli, filtres « en retard » et « cette semaine » identiques aux compteurs du tableau de bord, tri hors liste blanche refusé |
 | `TaskApiSecurityTest` | 7 | Bout en bout HTTP : `401` sans jeton sur toutes les routes, `404` sur la tâche d'autrui pour chaque verbe (changement de statut compris, sans effet), liste et statistiques limitées au demandeur, statuts et format d'erreur conservés, messages en anglais ou en français selon `Accept-Language`, tri et filtre d'échéance exposés |
 | `TimeEntryRepositoryIsolationTest` | 3 | Semaine limitée au propriétaire ; saisie d'autrui ni lisible ni supprimable ; total d'une tâche calculé en base, saisies supprimées avec la tâche |
@@ -511,7 +521,8 @@ du temps, la retrouve dans la feuille de temps et la supprime. Il vérifie aussi
 protection des pages privées, la bascule de langue et le compte de démonstration. Un
 second parcours part d'un compte neuf : première tâche, « terminée » puis « Annuler », et
 session expirée en pleine saisie (message, retour à la page filtrée, saisie rendue). Un
-dernier crée une tâche avec un rappel, attend qu'il arrive dans la cloche et l'ouvre.
+dernier crée une tâche avec un rappel et attend qu'il **arrive tout seul** dans la cloche,
+sans rechargement : c'est la preuve du flux temps réel de bout en bout.
 Première exécution locale : `npx playwright install chromium`.
 
 ---
@@ -556,10 +567,13 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
   de tâches récurrentes.
 - **Pas de « mot de passe oublié »** : il suppose l'envoi d'e-mails (lien à usage unique et
   durée limitée), hors du périmètre de ce test.
-- **Notifications sans e-mail ni push** : la cloche interroge l'API toutes les 30 s, et les
-  notifications du navigateur exigent un onglet TaskFlow ouvert (pas de service worker). Un
-  seul fuseau pour le rappel de 17 h (`APP_TIMEZONE`), faute de fuseau par utilisateur. Pistes :
-  récapitulatif quotidien par e-mail, Web Push, SSE.
+- **Pas de notification « push »** : les notifications du navigateur exigent un onglet
+  TaskFlow ouvert (pas de service worker, pas de Web Push). L'e-mail prend le relais quand
+  l'application est fermée.
+- **Un seul fuseau horaire** (`APP_TIMEZONE`) pour le rappel de 17 h et l'heure du
+  récapitulatif, faute de fuseau par utilisateur.
+- **E-mails en texte simple**, sans mise en page HTML ni suivi d'ouverture ; en local, ils
+  sont capturés par Mailpit et ne sortent pas de la machine.
 - **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
   l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`.
 - **Non réalisé (bonus)** : déploiement public.
