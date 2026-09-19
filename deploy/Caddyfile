@@ -1,0 +1,17 @@
+# HTTPS automatique (Let's Encrypt) pour le domaine renseigné dans .env.
+# Caddy redirige http vers https et renouvelle le certificat tout seul.
+{
+	email {$TLS_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	# Le flux de notifications doit arriver au fil de l'eau : pas de mise en tampon.
+	@stream path /api/v1/notifications/stream
+	reverse_proxy @stream web:80 {
+		flush_interval -1
+	}
+
+	reverse_proxy web:80
+}

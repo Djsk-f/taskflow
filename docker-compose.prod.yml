@@ -1,0 +1,57 @@
+# Surcouche de production, à combiner avec docker-compose.yml :
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Elle ferme les ports qui n'ont pas à sortir de la machine (base de données, API,
+# interface), retire la boîte aux lettres de démonstration et place un reverse proxy
+# Caddy devant l'application : il obtient et renouvelle seul le certificat HTTPS.
+
+services:
+  mysql:
+    # La base n'est jointe que par le réseau interne de Docker.
+    ports: !reset []
+
+  api:
+    ports: !reset []
+    environment:
+      # Aucune donnée de démonstration en production : chacun crée son compte.
+      APP_DEMO_DATA: ${APP_DEMO_DATA:-false}
+      APP_PUBLIC_URL: https://${DOMAIN:?renseigner DOMAIN dans .env}
+      APP_CORS_ALLOWED_ORIGINS: https://${DOMAIN}
+      # Serveur d'envoi réel ; sans lui, laisser APP_MAIL_ENABLED=false.
+      APP_MAIL_ENABLED: ${APP_MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-smtp.example.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+    depends_on: !override
+      mysql:
+        condition: service_healthy
+
+  web:
+    ports: !reset []
+
+  # Boîte de démonstration : inutile en production (les e-mails partent par le vrai SMTP).
+  mailpit: !reset null
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?renseigner DOMAIN dans .env}
+      TLS_EMAIL: ${TLS_EMAIL:?renseigner TLS_EMAIL dans .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

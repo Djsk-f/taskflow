@@ -20,14 +20,15 @@ en français et en anglais, en thème clair ou sombre.
 2. [Stack technique](#stack-technique)
 3. [Prérequis](#prérequis)
 4. [Installation et lancement](#installation-et-lancement)
-5. [Variables d'environnement](#variables-denvironnement)
-6. [API REST](#api-rest)
-7. [Architecture](#architecture)
-8. [Choix techniques et justifications](#choix-techniques-et-justifications)
-9. [Sécurité](#sécurité)
-10. [Tests et qualité](#tests-et-qualité)
-11. [Captures d'écran](#captures-décran)
-12. [Limites connues](#limites-connues)
+5. [Mise en production](#mise-en-production)
+6. [Variables d'environnement](#variables-denvironnement)
+7. [API REST](#api-rest)
+8. [Architecture](#architecture)
+9. [Choix techniques et justifications](#choix-techniques-et-justifications)
+10. [Sécurité](#sécurité)
+11. [Tests et qualité](#tests-et-qualité)
+12. [Captures d'écran](#captures-décran)
+13. [Limites connues](#limites-connues)
 
 ---
 
@@ -223,6 +224,25 @@ cd task-manager-web-v1
 npm run build        # vérification TypeScript puis build dans dist/
 npm run preview      # sert le build sur http://localhost:4173 (ajouter cette origine à APP_CORS_ALLOWED_ORIGINS)
 ```
+
+---
+
+## Mise en production
+
+Sur un serveur, une surcouche Compose ferme tout ce qui n'a pas à être public et place
+**Caddy** devant l'application : il obtient et renouvelle seul le certificat HTTPS.
+
+```bash
+cp .env.prod.example .env      # renseigner DOMAIN, TLS_EMAIL et les secrets
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+Seuls les ports **80** et **443** sont exposés ; la base, l'API et l'interface restent sur
+le réseau interne de Docker, les données de démonstration sont coupées et le récapitulatif
+par e-mail attend un vrai serveur d'envoi.
+
+Procédure complète — prérequis, sauvegarde et restauration, mise à jour, pannes courantes :
+**[docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)**.
 
 ---
 
@@ -576,7 +596,9 @@ Choix assumés pour tenir le périmètre, et ce qu'il faudrait faire ensuite :
   sont capturés par Mailpit et ne sortent pas de la machine.
 - **Images Docker** : les tests ne sont pas rejoués pendant la construction de l'image de
   l'API (`-DskipTests`) ; ils se lancent avec `./mvnw test`.
-- **Non réalisé (bonus)** : déploiement public.
+- **Déploiement public** : la procédure complète est fournie et testée en configuration
+  (`docs/DEPLOIEMENT.md` : une machine, Docker Compose, HTTPS automatique par Caddy).
+  Aucune instance publique n'est en ligne : elle dépend d'un serveur et d'un domaine.
 - **Éléments de la maquette volontairement non repris** : avatars d'équipe, intégrations
   (Slack, GitHub, Gmail…), messagerie et images de couverture des cartes. TaskFlow est
   mono-utilisateur ; les reproduire aurait donné des contrôles décoratifs sans fonction.
