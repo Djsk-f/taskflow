@@ -1,0 +1,66 @@
+name: Bout en bout
+
+# Vérification de l'application réellement assemblée : les images Docker sont construites,
+# la pile est démarrée par Docker Compose, et les parcours Playwright sont joués contre
+# elle. Séparée de la CI (workflows/ci.yml) pour que celle-ci reste courte et rapide ;
+# les deux se déclenchent sur les mêmes événements et tournent en parallèle.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Docker + parcours (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configuration de démonstration : .env.example et un secret JWT généré pour ce run.
+      - name: Préparer .env
+        run: |
+          cp .env.example .env
+          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" .env
+          # Rappels générés toutes les 5 s : le test des notifications n'attend pas 30 s.
+          sed -i "s|^APP_NOTIFICATIONS_SCAN_INTERVAL_MS=.*|APP_NOTIFICATIONS_SCAN_INTERVAL_MS=5000|" .env
+
+      # Construit les images et attend que MySQL, l'API et l'interface soient sains.
+      - name: Démarrer la pile
+        run: docker compose up -d --build --wait
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: task-manager-web-v1/package-lock.json
+
+      - name: Installation des dépendances
+        run: npm ci
+        working-directory: task-manager-web-v1
+
+      - name: Navigateur de test
+        run: npx playwright install --with-deps chromium
+        working-directory: task-manager-web-v1
+
+      - name: Parcours de bout en bout
+        run: npx playwright test
+        working-directory: task-manager-web-v1
+
+      - name: Journaux de l'API en cas d'échec
+        if: failure()
+        run: docker compose logs api
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: task-manager-web-v1/playwright-report
+          retention-days: 7

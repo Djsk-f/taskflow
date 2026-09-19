@@ -1,88 +1,75 @@
 name: CI
 
+# Intégration continue du monorepo : le backend Spring Boot et l'interface React sont
+# deux projets indépendants, donc deux jobs qui tournent en parallèle. Aucun `needs` :
+# rien ne dépend de rien ici.
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 # Un nouveau push annule l'exécution précédente de la même branche.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Lecture seule : la CI ne publie rien et n'écrit pas dans le dépôt.
 permissions:
   contents: read
 
 jobs:
   api:
-    name: API — tests (Java 21)
+    name: API — tests et package (Java 21)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: task-manager-api-v1
     steps:
       - uses: actions/checkout@v4
+
+      # Java 21 : la version déclarée par <java.version> dans pom.xml.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
-      # Base H2 en mémoire (profil test) : ni MySQL ni secret nécessaires.
-      - run: ./mvnw -B verify
+
+      # `verify` compile, exécute les tests et package le jar en une commande.
+      # Les tests tournent sur une base H2 en mémoire (profil test) : ni MySQL ni secret.
+      - name: Tests et package
+        run: ./mvnw -B verify
 
   web:
-    name: Web — lint et build (Node 22)
+    name: Interface — lint, tests et build (Node 22)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: task-manager-web-v1
     steps:
       - uses: actions/checkout@v4
+
+      # Node 22 : Vite 8 et TypeScript 6 exigent Node >= 20.19 ou >= 22.12.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: task-manager-web-v1/package-lock.json
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      # Vérification stricte des types (tsc -b) puis build de production.
-      - run: npm run build
+
+      # `npm ci` (et non `npm install`) : installation reproductible depuis le lockfile.
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests unitaires
+        run: npm test
+
+      # `npm run build` = `tsc -b && vite build` : la vérification stricte des types
+      # fait donc échouer le job. VITE_API_BASE_URL est validée au démarrage de
+      # l'application : sans elle, le bundle embarquerait une URL absente.
+      - name: Build de production
+        run: npm run build
         env:
           VITE_API_BASE_URL: /api/v1
-
-  e2e:
-    name: Docker + bout en bout (Playwright)
-    runs-on: ubuntu-latest
-    needs: [api, web]
-    steps:
-      - uses: actions/checkout@v4
-      # Configuration de démonstration : .env.example et un secret JWT généré pour ce run.
-      - name: Préparer .env
-        run: |
-          cp .env.example .env
-          sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" .env
-          # Rappels générés toutes les 5 s : le test des notifications n'attend pas 30 s.
-          sed -i "s|^APP_NOTIFICATIONS_SCAN_INTERVAL_MS=.*|APP_NOTIFICATIONS_SCAN_INTERVAL_MS=5000|" .env
-      # Construit les deux images et attend que MySQL et l'API soient sains.
-      - run: docker compose up -d --build --wait
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: task-manager-web-v1/package-lock.json
-      - run: npm ci
-        working-directory: task-manager-web-v1
-      - run: npx playwright install --with-deps chromium
-        working-directory: task-manager-web-v1
-      - run: npx playwright test
-        working-directory: task-manager-web-v1
-      - name: Journaux de l'API en cas d'échec
-        if: failure()
-        run: docker compose logs api
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report
-          path: task-manager-web-v1/playwright-report
-          retention-days: 7

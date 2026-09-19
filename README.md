@@ -522,9 +522,10 @@ cd task-manager-api-v1
 | `OpenApiDocumentationTest` | 3 | Documentation publique et complète, connexion publique, routes protégées avec 401/404 documentés, aucun paramètre `userId` exposé ; Swagger UI accessible |
 | `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
-**Intégration continue** : à chaque push et pull request, GitHub Actions lance les tests
-de l'API, le lint, les tests et le build de l'interface, puis démarre l'application complète
-avec Docker Compose et y joue les tests Playwright (`.github/workflows/ci.yml`).
+**Intégration continue** : sur chaque push vers `main` et chaque pull request vers `main`,
+GitHub Actions exécute deux workflows en parallèle — `ci.yml` (tests et package de l'API,
+puis lint, tests et build de l'interface, en deux jobs indépendants) et `e2e.yml` (démarrage
+de l'application complète avec Docker Compose, puis parcours Playwright).
 
 **Interface** — 44 tests Vitest (logique et composants) et 6 tests de bout en bout Playwright :
 
