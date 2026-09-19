@@ -1,0 +1,66 @@
+# Généré par le CLI Firebase (https://github.com/firebase/firebase-tools), puis adapté au
+# monorepo : l'interface vit dans task-manager-web-v1/, il n'y a pas de package.json à la
+# racine, et la configuration Firebase est dans ce même sous-dossier.
+#
+# Le déploiement n'a lieu qu'après une CI verte : il attend la fin du workflow « CI »
+# (tests API et interface, Gitleaks, construction et scan Trivy des images) et ne part que
+# si sa conclusion est « success ». Pour revenir à un déploiement à chaque push, remplacer
+# le bloc `workflow_run` par `push: branches: [main]` et retirer le `if`.
+name: Deploy to Firebase Hosting on merge
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+
+# Lecture seule : ce workflow publie sur Firebase, il n'écrit rien dans le dépôt.
+permissions:
+  contents: read
+
+# Un seul déploiement en direct à la fois ; celui en cours n'est jamais interrompu.
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: false
+
+jobs:
+  build_and_deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: task-manager-web-v1
+    steps:
+      # Le commit exact validé par la CI, et non la tête de branche : sans cela, un push
+      # survenu entre-temps serait déployé sans avoir été testé.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Même version que la CI : Vite 8 et TypeScript 6 exigent Node >= 20.19 ou >= 22.12.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: task-manager-web-v1/package-lock.json
+
+      - run: npm ci
+
+      # URL de l'API appelée par l'interface. Sur Firebase, aucun proxy ne relaie /api :
+      # il faut l'URL publique de l'API, à renseigner dans la variable de dépôt
+      # VITE_API_BASE_URL (Settings > Secrets and variables > Actions > Variables).
+      # Tant qu'elle est absente, le site se charge et signale que le serveur est
+      # injoignable, au lieu de rester blanc.
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || '/api/v1' }}
+
+      # `entryPoint` : firebase.json et .firebaserc sont dans le sous-dossier, pas à la
+      # racine du dépôt. Le dossier publié est donc task-manager-web-v1/dist.
+      - uses: FirebaseExtended/action-hosting-deploy@v0.11.0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TASKFLOW_D3E9C }}
+          channelId: live
+          projectId: taskflow-d3e9c
+          entryPoint: task-manager-web-v1

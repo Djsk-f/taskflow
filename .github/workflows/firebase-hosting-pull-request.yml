@@ -1,0 +1,53 @@
+# Généré par le CLI Firebase (https://github.com/firebase/firebase-tools), puis adapté au
+# monorepo : build depuis task-manager-web-v1/, et configuration Firebase lue dans ce même
+# sous-dossier. Chaque pull request reçoit un canal de prévisualisation temporaire, dont
+# l'URL est commentée sur la PR ; le site en direct n'est jamais touché ici.
+name: Deploy to Firebase Hosting on PR
+
+on: pull_request
+
+# `checks` et `pull-requests` en écriture : l'action publie l'URL de prévisualisation
+# sur la pull request. `contents` reste en lecture seule.
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+# Un nouveau commit sur la PR remplace la prévisualisation en cours.
+concurrency:
+  group: firebase-hosting-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build_and_preview:
+    # Les PR venant d'un fork n'ont pas accès aux secrets : inutile de tenter le déploiement.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: task-manager-web-v1
+    steps:
+      - uses: actions/checkout@v4
+
+      # Même version que la CI : Vite 8 et TypeScript 6 exigent Node >= 20.19 ou >= 22.12.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: task-manager-web-v1/package-lock.json
+
+      - run: npm ci
+
+      # Même variable que le déploiement en direct (voir firebase-hosting-merge.yml).
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || '/api/v1' }}
+
+      # Sans `channelId`, l'action crée un canal de prévisualisation propre à cette PR.
+      # `entryPoint` : la configuration Firebase est dans le sous-dossier de l'interface.
+      - uses: FirebaseExtended/action-hosting-deploy@v0.11.0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TASKFLOW_D3E9C }}
+          projectId: taskflow-d3e9c
+          entryPoint: task-manager-web-v1
