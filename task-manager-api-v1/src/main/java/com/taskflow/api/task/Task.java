@@ -63,6 +63,14 @@ public class Task extends Auditable {
     @Column(name = "reminder_at")
     private Instant reminderAt;
 
+    /** Début du chrono, tant que la tâche est « En cours ». */
+    @Column(name = "timer_started_at")
+    private Instant timerStartedAt;
+
+    /** Passage à « Terminé » ; sert à limiter l'annulation. */
+    @Column(name = "completed_at")
+    private Instant completedAt;
+
     /**
      * Temps total saisi sur la tâche, en minutes, calculé par la base à chaque lecture
      * (sous-requête) : les listes l'obtiennent sans requête supplémentaire par tâche.

@@ -117,8 +117,9 @@ export const fr = {
     views: { label: 'Vue des tâches', table: 'Grille', list: 'Liste', kanban: 'Kanban' },
     complete: {
       mark: 'Marquer « {{title}} » comme terminée',
-      reopen: 'Rouvrir « {{title}} »',
+      done: 'Terminée',
     },
+    timer: { label: 'Chrono en cours : {{duration}}' },
     sort: {
       button: 'Trier',
       label: 'Trier les tâches (actuellement : {{current}})',

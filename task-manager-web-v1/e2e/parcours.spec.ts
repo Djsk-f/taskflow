@@ -64,6 +64,8 @@ test('parcours complet : inscription, créer, déplacer, saisir du temps, feuill
   await expect(inProgress.getByRole('group', { name: title })).toBeVisible()
   // Déplacement confirmé par le serveur (la carte a fini de changer de colonne)
   await expect(page.getByText(`« ${title} » déplacée vers En cours.`)).toBeVisible()
+  // « En cours » lance le chrono
+  await expect(inProgress.getByRole('group', { name: title }).getByText(/Chrono en cours/)).toBeAttached()
 
   // Saisie de temps
   await page.getByRole('button', { name: `Actions sur « ${title} »` }).click()
@@ -101,6 +103,12 @@ test('premier pas, « terminée » annulable, et session expirée sans perte de 
   await expect(page.getByRole('region', { name: /^Terminé/ }).getByRole('group', { name: 'Appeler la mutuelle' })).toBeVisible()
   await page.getByRole('button', { name: 'Annuler' }).click()
   await expect(page.getByRole('region', { name: /^À faire/ }).getByRole('group', { name: 'Appeler la mutuelle' })).toBeVisible()
+
+  // Une fois terminée pour de bon, plus aucun changement de statut n'est proposé
+  await page.getByRole('button', { name: 'Marquer « Appeler la mutuelle » comme terminée' }).click()
+  await page.getByRole('button', { name: 'Actions sur « Appeler la mutuelle »' }).click()
+  await expect(page.getByRole('menuitem', { name: 'En cours' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
 
   // Session expirée pendant une saisie : message, retour à la page, saisie rendue
   await page.goto('/tasks?view=table&priority=HIGH')

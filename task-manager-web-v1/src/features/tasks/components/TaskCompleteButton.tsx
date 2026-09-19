@@ -1,28 +1,29 @@
 import type { TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
-import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { CircleCheckBigIcon, CircleIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-/**
- * Case « terminée » en un geste, à côté du menu d'actions : c'est l'action la plus
- * fréquente, elle ne doit pas se cacher sous « Déplacer vers ». Une tâche terminée
- * se rouvre « À faire » ; le toast propose d'annuler.
- */
+/** « Terminée » en un clic. Une tâche terminée l'est définitivement : simple coche. */
 export function TaskCompleteButton({ task, onMove }: { task: Task } & Pick<TaskActionHandlers, 'onMove'>) {
   const { t } = useTranslation()
-  const done = task.status === 'DONE'
+  if (task.status === 'DONE') {
+    return (
+      <span className="text-status-done-text flex size-9 items-center justify-center" title={t('tasks.complete.done')}>
+        <CircleCheckBigIcon className="size-4" />
+        <span className="sr-only">{t('tasks.complete.done')}</span>
+      </span>
+    )
+  }
   return (
     <Button
       variant="ghost"
       size="icon"
-      aria-pressed={done}
-      aria-label={done ? t('tasks.complete.reopen', { title: task.title }) : t('tasks.complete.mark', { title: task.title })}
-      onClick={() => onMove(task, done ? 'TODO' : 'DONE')}
-      className={cn(done ? 'text-status-done-text' : 'text-muted-foreground hover:text-status-done-text')}
+      aria-label={t('tasks.complete.mark', { title: task.title })}
+      onClick={() => onMove(task, 'DONE')}
+      className="text-muted-foreground hover:text-status-done-text"
     >
-      {done ? <CircleCheckBigIcon className="size-4" /> : <CircleIcon className="size-4" />}
+      <CircleIcon className="size-4" />
     </Button>
   )
 }

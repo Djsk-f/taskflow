@@ -13,6 +13,7 @@ export type ApiErrorCode =
   | 'UNSUPPORTED_MEDIA_TYPE'
   | 'EMAIL_ALREADY_USED'
   | 'TOO_MANY_REQUESTS'
+  | 'TASK_COMPLETED'
   | 'INTERNAL_ERROR'
 
 export type ApiFieldError = {

@@ -3,6 +3,7 @@ import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButt
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
 import { TaskReminder } from '@/features/tasks/components/TaskReminder'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
+import { TaskTimer } from '@/features/tasks/components/TaskTimer'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
 
@@ -25,6 +26,7 @@ export function TaskList({ tasks, ...actions }: { tasks: Task[] } & TaskActionHa
               <TaskDueDate task={task} compact />
               <TaskReminder task={task} />
               <TaskTimeSpent task={task} />
+              {task.timerStartedAt && <TaskTimer startedAt={task.timerStartedAt} />}
             </div>
           </div>
           <div className="flex shrink-0 items-center">

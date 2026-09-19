@@ -117,8 +117,9 @@ export const en: Dictionary<typeof fr> = {
     views: { label: 'Task view', table: 'Table', list: 'List', kanban: 'Kanban' },
     complete: {
       mark: 'Mark "{{title}}" as done',
-      reopen: 'Reopen "{{title}}"',
+      done: 'Done',
     },
+    timer: { label: 'Timer running: {{duration}}' },
     sort: {
       button: 'Sort',
       label: 'Sort tasks (currently: {{current}})',

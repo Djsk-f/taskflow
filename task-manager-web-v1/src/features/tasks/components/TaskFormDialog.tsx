@@ -176,7 +176,13 @@ export function TaskFormDialog({ open, onOpenChange, task, defaultStatus = 'TODO
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormSelectField control={form.control} name="status" label={t('tasks.form.status')} options={statusOptions} />
+              <FormSelectField
+              control={form.control}
+              name="status"
+              label={t('tasks.form.status')}
+              options={statusOptions}
+              disabled={task?.status === 'DONE'}
+            />
               <FormSelectField control={form.control} name="priority" label={t('tasks.form.priority')} options={priorityOptions} />
             </div>
 

@@ -3,6 +3,7 @@ import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButt
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
 import { TaskReminder } from '@/features/tasks/components/TaskReminder'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
+import { TaskTimer } from '@/features/tasks/components/TaskTimer'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import type { Task } from '@/features/tasks/types'
 import { cn } from '@/shared/lib/utils'
@@ -20,23 +21,27 @@ const CARD_CLASS =
  * Toute la carte se saisit pour le glisser-déposer ; le titre ouvre la modification.
  */
 export function TaskCard({ task, ...actions }: TaskCardProps) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id, data: { task } })
+  // Une tâche terminée ne quitte plus sa colonne.
+  const locked = task.status === 'DONE'
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id, data: { task }, disabled: locked })
   const { t } = useTranslation()
 
   return (
     <article
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
+      // Carte verrouillée : aucun attribut de glisser-déposer, sinon son aria-disabled
+      // désactiverait aussi les boutons qu'elle contient.
+      {...(locked ? {} : { ...listeners, ...attributes })}
       // dnd-kit pose role="button" ; or la carte contient des boutons (titre, menu), et un
       // bouton ne doit pas en contenir d'autres. « group » garde focus, description et
       // instructions clavier du glisser-déposer.
       role="group"
-      aria-roledescription={t('tasks.kanban.draggable')}
+      aria-roledescription={locked ? undefined : t('tasks.kanban.draggable')}
       aria-label={task.title}
       className={cn(
         CARD_CLASS,
-        'cursor-grab touch-manipulation hover:shadow-[var(--shadow-card-hover)] active:cursor-grabbing',
+        !locked && 'cursor-grab touch-manipulation active:cursor-grabbing',
+        'hover:shadow-[var(--shadow-card-hover)]',
         isDragging && 'opacity-40',
       )}
     >
@@ -74,12 +79,14 @@ function TaskCardContent({ task, ...actions }: TaskCardProps) {
           {task.description}
         </p>
       )}
-      <div className="mt-3 flex items-center justify-between border-t pt-2">
-        <div className="flex items-center gap-2">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t pt-2">
+        {/* Les badges passent à la ligne : les boutons restent dans la carte. */}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <TaskPriorityBadge priority={task.priority} />
           <TaskTimeSpent task={task} />
+          {task.timerStartedAt && <TaskTimer startedAt={task.timerStartedAt} />}
         </div>
-        <div className="flex items-center" {...stopDrag}>
+        <div className="flex shrink-0 items-center" {...stopDrag}>
           <TaskCompleteButton task={task} onMove={actions.onMove} />
           <TaskRowActions task={task} {...actions} />
         </div>

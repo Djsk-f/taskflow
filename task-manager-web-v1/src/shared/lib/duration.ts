@@ -43,3 +43,13 @@ export function formatDuration(totalMinutes: number): string {
   }
   return english ? `${hours}h ${minutes}m` : `${hours} h ${String(minutes).padStart(2, '0')}`
 }
+
+/** Chronomètre : « 12:05 » sous une heure, « 1:02:05 » au-delà. */
+export function formatStopwatch(totalSeconds: number): string {
+  const seconds = Math.max(0, Math.floor(totalSeconds))
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`
+}

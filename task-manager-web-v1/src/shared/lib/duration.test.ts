@@ -1,5 +1,5 @@
 import { i18n } from '@/shared/i18n/i18n'
-import { formatDuration, parseDuration } from '@/shared/lib/duration'
+import { formatDuration, formatStopwatch, parseDuration } from '@/shared/lib/duration'
 import { describe, expect, it } from 'vitest'
 
 describe('parseDuration', () => {
@@ -35,5 +35,14 @@ describe('formatDuration', () => {
     expect(formatDuration(45)).toBe('45m')
     expect(formatDuration(120)).toBe('2h')
     expect(formatDuration(95)).toBe('1h 35m')
+  })
+})
+
+describe('formatStopwatch', () => {
+  it('affiche minutes et secondes, puis les heures au-delà d’une heure', () => {
+    expect(formatStopwatch(0)).toBe('00:00')
+    expect(formatStopwatch(65)).toBe('01:05')
+    expect(formatStopwatch(3725)).toBe('1:02:05')
+    expect(formatStopwatch(-3)).toBe('00:00')
   })
 })

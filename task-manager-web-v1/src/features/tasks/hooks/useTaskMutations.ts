@@ -1,6 +1,7 @@
 import { taskApi } from '@/features/tasks/api/taskApi'
 import { NOTIFICATIONS_QUERY_KEY } from '@/features/notifications/hooks/useNotifications'
 import { TASKS_QUERY_KEY } from '@/features/tasks/hooks/useTasks'
+import { TIME_ENTRIES_QUERY_KEY } from '@/features/timesheets/hooks/useTimeEntries'
 import type { TaskPayload, TaskStatus } from '@/features/tasks/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -20,6 +21,8 @@ export function useTaskMutations() {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: [TASKS_QUERY_KEY] }),
       queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_QUERY_KEY] }),
+      // Quitter « En cours » enregistre le chrono dans la feuille de temps.
+      queryClient.invalidateQueries({ queryKey: [TIME_ENTRIES_QUERY_KEY] }),
     ])
 
   const createTask = useMutation({

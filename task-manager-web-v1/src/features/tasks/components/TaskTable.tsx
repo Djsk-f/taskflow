@@ -2,6 +2,7 @@ import { TaskPriorityBadge, TaskStatusBadge } from '@/features/tasks/components/
 import { TaskCompleteButton } from '@/features/tasks/components/TaskCompleteButton'
 import { TaskDueDate } from '@/features/tasks/components/TaskDueDate'
 import { TaskTimeSpent } from '@/features/tasks/components/TaskTimeSpent'
+import { TaskTimer } from '@/features/tasks/components/TaskTimer'
 import { TaskList } from '@/features/tasks/components/TaskList'
 import { TaskRowActions, type TaskActionHandlers } from '@/features/tasks/components/TaskRowActions'
 import { toggleSort } from '@/features/tasks/taskFilters'
@@ -62,7 +63,10 @@ export function TaskTable({ tasks, sort, onSortChange, ...actions }: TaskTablePr
                   <TaskDueDate task={task} />
                 </TableCell>
                 <TableCell>
-                  <TaskTimeSpent task={task} showEmpty />
+                  <div className="flex flex-col gap-1">
+                    <TaskTimeSpent task={task} showEmpty />
+                    {task.timerStartedAt && <TaskTimer startedAt={task.timerStartedAt} />}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end">

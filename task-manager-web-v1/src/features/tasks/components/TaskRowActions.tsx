@@ -43,17 +43,22 @@ export function TaskRowActions({ task, onEdit, onDelete, onMove, onLogTime }: { 
           <ClockPlusIcon className="size-4" />
           {t('tasks.actions.logTime')}
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">{t('tasks.actions.moveTo')}</DropdownMenuLabel>
-        {TASK_STATUSES.filter((status) => status !== task.status).map((status) => {
-          const meta = TASK_STATUS_META[status]
-          return (
-            <DropdownMenuItem key={status} onSelect={() => onMove(task, status)}>
-              <meta.icon className="size-4" />
-              {t(meta.labelKey)}
-            </DropdownMenuItem>
-          )
-        })}
+        {/* Une tâche terminée ne change plus de statut. */}
+        {task.status !== 'DONE' && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">{t('tasks.actions.moveTo')}</DropdownMenuLabel>
+            {TASK_STATUSES.filter((status) => status !== task.status).map((status) => {
+              const meta = TASK_STATUS_META[status]
+              return (
+                <DropdownMenuItem key={status} onSelect={() => onMove(task, status)}>
+                  <meta.icon className="size-4" />
+                  {t(meta.labelKey)}
+                </DropdownMenuItem>
+              )
+            })}
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => onDelete(task)}>
           <Trash2Icon className="size-4" />

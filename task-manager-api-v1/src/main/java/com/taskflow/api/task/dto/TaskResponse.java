@@ -12,6 +12,7 @@ public record TaskResponse(
         TaskPriority priority,
         Instant dueDate,
         Instant reminderAt,
+        Instant timerStartedAt,
         Instant createdAt,
         Instant updatedAt,
         int timeSpentMinutes) {

@@ -12,6 +12,7 @@ type FormSelectFieldProps<TValues extends FieldValues> = {
   label: string
   options: readonly SelectOption[]
   className?: string
+  disabled?: boolean
 }
 
 export function FormSelectField<TValues extends FieldValues>({
@@ -20,6 +21,7 @@ export function FormSelectField<TValues extends FieldValues>({
   label,
   options,
   className,
+  disabled = false,
 }: FormSelectFieldProps<TValues>) {
   const { t } = useTranslation()
   return (
@@ -28,7 +30,7 @@ export function FormSelectField<TValues extends FieldValues>({
       name={name}
       render={({ field, fieldState }) => (
         <FormFieldShell name={name} label={label} error={fieldState.error} className={className}>
-          <Select value={field.value ?? ''} onValueChange={field.onChange}>
+          <Select value={field.value ?? ''} onValueChange={field.onChange} disabled={disabled}>
             <SelectTrigger {...fieldControlProps(name, fieldState.error)} className="w-full">
               <SelectValue placeholder={t('common.choose')} />
             </SelectTrigger>

@@ -8,6 +8,7 @@ import com.taskflow.api.task.dto.TaskRequest;
 import com.taskflow.api.task.dto.TaskResponse;
 import com.taskflow.api.task.dto.TaskStatusRequest;
 import com.taskflow.api.user.UserRepository;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final TaskLifecycle taskLifecycle;
 
     public PageResponse<TaskResponse> search(Long userId, TaskFilter filter, TaskSort sort, Pageable pageable) {
         return PageResponse.from(
@@ -45,6 +47,7 @@ public class TaskService {
         // Référence paresseuse : rattacher le propriétaire ne nécessite pas de le charger,
         // et la clé étrangère garantit l'intégrité.
         Task task = TaskMapper.toEntity(request, userRepository.getReferenceById(userId));
+        taskLifecycle.apply(task, null, Instant.now());
         Task saved = taskRepository.save(task);
         log.info("Tâche créée : id={} utilisateur={}", saved.getId(), userId);
         return TaskMapper.toResponse(saved);
@@ -53,7 +56,9 @@ public class TaskService {
     @Transactional
     public TaskResponse update(Long taskId, Long userId, TaskRequest request) {
         Task task = requireOwnedTask(taskId, userId);
+        TaskStatus previous = task.getStatus();
         TaskMapper.applyTo(request, task);
+        taskLifecycle.apply(task, previous, Instant.now());
         // saveAndFlush et non save : l'horodatage d'audit est écrit par Hibernate au flush.
         // Sans flush explicite, la réponse renverrait l'updatedAt d'avant la modification.
         Task saved = taskRepository.saveAndFlush(task);
@@ -65,7 +70,9 @@ public class TaskService {
     @Transactional
     public TaskResponse updateStatus(Long taskId, Long userId, TaskStatusRequest request) {
         Task task = requireOwnedTask(taskId, userId);
+        TaskStatus previous = task.getStatus();
         task.setStatus(request.status());
+        taskLifecycle.apply(task, previous, Instant.now());
         Task saved = taskRepository.saveAndFlush(task);
         notificationService.discardObsolete(saved);
         return TaskMapper.toResponse(saved);

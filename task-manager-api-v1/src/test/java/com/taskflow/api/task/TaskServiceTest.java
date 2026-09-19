@@ -37,6 +37,9 @@ class TaskServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private TaskLifecycle taskLifecycle;
+
     @InjectMocks
     private TaskService taskService;
 

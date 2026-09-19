@@ -15,6 +15,8 @@ export type Task = {
   dueDate?: string
   /** Rappel choisi par l'utilisateur (notification à cet instant). */
   reminderAt?: string
+  /** Début du chrono, tant que la tâche est « En cours ». */
+  timerStartedAt?: string
   createdAt: string
   updatedAt: string
   /** Temps total saisi sur la tâche (feuilles de temps), en minutes. */
