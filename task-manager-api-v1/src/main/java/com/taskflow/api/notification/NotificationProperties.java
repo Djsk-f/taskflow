@@ -12,5 +12,16 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "app.notifications")
 public record NotificationProperties(
         @DefaultValue("Europe/Paris") ZoneId zone,
-        @DefaultValue("17") int dailyTimeHour) {
+        @DefaultValue("17") int dailyTimeHour,
+        @DefaultValue Email email) {
+
+    /**
+     * Récapitulatif quotidien par e-mail. Coupé par défaut : sans serveur d'envoi
+     * configuré, l'application doit fonctionner exactement pareil.
+     */
+    public record Email(
+            @DefaultValue("false") boolean enabled,
+            @DefaultValue("TaskFlow <no-reply@taskflow.local>") String from,
+            @DefaultValue("7") int hour) {
+    }
 }

@@ -45,6 +45,11 @@ public class User extends Auditable {
     @Builder.Default
     private NotificationPreferences notificationPreferences = new NotificationPreferences();
 
+    /** Langue des messages envoyés hors de l'application (e-mails) : « fr » ou « en ». */
+    @Column(nullable = false, length = 5)
+    @Builder.Default
+    private String language = "fr";
+
     /**
      * Dernier rempart de normalisation : même si un appelant oublie Emails.normalize,
      * aucun email non normalisé ne peut atteindre la contrainte d'unicité SQL.

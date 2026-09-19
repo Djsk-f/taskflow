@@ -1,10 +1,12 @@
 package com.taskflow.api.notification;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
@@ -31,6 +33,9 @@ class NotificationApiTest {
 
     @Autowired
     private NotificationGenerator generator;
+
+    @Autowired
+    private NotificationStream notificationStream;
 
     @Test
     @DisplayName("sans jeton, les routes de notifications répondent 401")
@@ -99,14 +104,19 @@ class NotificationApiTest {
         mockMvc.perform(get("/api/v1/users/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, dave))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.dueIn24h").value(true))
-                .andExpect(jsonPath("$.dailyTimeReminder").value(false));
+                .andExpect(jsonPath("$.dailyTimeReminder").value(false))
+                .andExpect(jsonPath("$.emailDigest").value(false))
+                .andExpect(jsonPath("$.language").value("fr"));
 
         mockMvc.perform(put("/api/v1/users/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, dave)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"dueIn24h\":false,\"dueIn1h\":true,\"overdue\":true,\"dailyTimeReminder\":true}"))
+                        .content("{\"dueIn24h\":false,\"dueIn1h\":true,\"overdue\":true,\"dailyTimeReminder\":true,"
+                                + "\"emailDigest\":true,\"language\":\"en\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.dueIn24h").value(false))
-                .andExpect(jsonPath("$.dailyTimeReminder").value(true));
+                .andExpect(jsonPath("$.dailyTimeReminder").value(true))
+                .andExpect(jsonPath("$.emailDigest").value(true))
+                .andExpect(jsonPath("$.language").value("en"));
 
         mockMvc.perform(put("/api/v1/users/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, dave)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"dueIn24h\":true}"))
@@ -114,6 +124,25 @@ class NotificationApiTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
         mockMvc.perform(get("/api/v1/users/me/notification-preferences"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("flux temps réel : fermé sans jeton, ouvert avec, et refermé à la fin")
+    void streamIsProtectedAndOpens() throws Exception {
+        mockMvc.perform(get("/api/v1/notifications/stream")).andExpect(status().isUnauthorized());
+
+        String eve = bearer(register("eve.notif@test.local"));
+        int before = notificationStream.openStreams();
+        var async = mockMvc.perform(get("/api/v1/notifications/stream").header(HttpHeaders.AUTHORIZATION, eve))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        assertThat(notificationStream.openStreams()).isEqualTo(before + 1);
+        assertThat(async.getResponse().getContentAsString()).contains("connected");
+
+        // Fin de la requête asynchrone : le flux doit se retirer du registre.
+        async.getRequest().getAsyncContext().complete();
+        assertThat(notificationStream.openStreams()).isEqualTo(before);
     }
 
     private long createTask(String bearer, String title, Instant dueDate) throws Exception {

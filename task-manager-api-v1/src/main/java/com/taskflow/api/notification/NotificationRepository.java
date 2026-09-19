@@ -49,6 +49,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Task> findOpenTasksRemindedBetween(@Param("done") TaskStatus done, @Param("from") Instant from,
                                             @Param("to") Instant to);
 
+    /** Tâches d'un utilisateur, non terminées, à rendre avant l'instant donné (récapitulatif). */
+    @Query("select t from Task t where t.user.id = :userId and t.status <> :done "
+            + "and t.dueDate is not null and t.dueDate < :before order by t.dueDate asc")
+    List<Task> findOpenTasksDueBefore(@Param("userId") Long userId, @Param("done") TaskStatus done,
+                                      @Param("before") Instant before);
+
     /** Utilisateurs qui veulent le rappel de saisie du temps et n'ont rien saisi ce jour-là. */
     @Query("select u from User u where u.notificationPreferences.dailyTimeReminder = true and not exists "
             + "(select te.id from TimeEntry te where te.user = u and te.workDate = :day)")

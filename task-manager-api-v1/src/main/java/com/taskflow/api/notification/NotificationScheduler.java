@@ -7,8 +7,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Passage périodique du générateur (30 s par défaut). Désactivé dans les tests, qui
- * appellent le générateur avec un instant choisi. Une seule instance d'API est prévue :
+ * Passage périodique : génération des rappels puis récapitulatifs par e-mail (30 s par
+ * défaut). Désactivé dans les tests, qui appellent ces traitements avec un instant choisi. Une seule instance d'API est prévue :
  * à plusieurs, la contrainte d'unicité empêcherait tout de même les doublons.
  */
 @Component
@@ -17,10 +17,13 @@ import org.springframework.stereotype.Component;
 public class NotificationScheduler {
 
     private final NotificationGenerator notificationGenerator;
+    private final EmailDigestJob emailDigestJob;
 
     @Scheduled(initialDelayString = "${app.notifications.initial-delay-ms:5000}",
             fixedDelayString = "${app.notifications.scan-interval-ms:30000}")
     public void run() {
-        notificationGenerator.generate(Instant.now());
+        Instant now = Instant.now();
+        notificationGenerator.generate(now);
+        emailDigestJob.sendDue(now);
     }
 }

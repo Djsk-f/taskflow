@@ -61,14 +61,18 @@ public class NotificationService {
     }
 
     public NotificationPreferencesDto preferences(Long userId) {
-        return NotificationPreferencesDto.from(requireUser(userId).getNotificationPreferences());
+        User user = requireUser(userId);
+        return NotificationPreferencesDto.from(user.getNotificationPreferences(), user.getLanguage());
     }
 
     @Transactional
     public NotificationPreferencesDto updatePreferences(Long userId, NotificationPreferencesDto request) {
         User user = requireUser(userId);
         user.setNotificationPreferences(request.toPreferences());
-        return NotificationPreferencesDto.from(user.getNotificationPreferences());
+        if (request.language() != null) {
+            user.setLanguage(request.language());
+        }
+        return NotificationPreferencesDto.from(user.getNotificationPreferences(), user.getLanguage());
     }
 
     /**

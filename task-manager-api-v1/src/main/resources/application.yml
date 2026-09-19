@@ -28,6 +28,17 @@ spring:
     locations: classpath:db/migration
   jackson:
     default-property-inclusion: non_null
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   # Messages renvoyés au client en français (défaut) ou en anglais selon Accept-Language.
   messages:
     basename: messages
@@ -56,6 +67,13 @@ app:
     # Rappel de saisie du temps (jours ouvrés, si activé dans le profil) : heure locale.
     zone: ${APP_TIMEZONE:Europe/Paris}
     daily-time-hour: 17
+    # Récapitulatif quotidien par e-mail : coupé tant qu'aucun serveur d'envoi n'est configuré.
+    email:
+      enabled: ${APP_MAIL_ENABLED:false}
+      from: ${APP_MAIL_FROM:TaskFlow <no-reply@taskflow.local>}
+      hour: ${APP_MAIL_DIGEST_HOUR:7}
+  # Lien vers l'application dans les e-mails.
+  public-url: ${APP_PUBLIC_URL:http://localhost:3000}
   demo-data:
     enabled: ${APP_DEMO_DATA:false}
     # Identifiants publics de la démo (documentés dans le README), pas un secret.
@@ -75,6 +93,11 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # L'état de l'application ne dépend pas du serveur d'envoi d'e-mails : le récapitulatif
+    # est facultatif, une panne SMTP ne doit pas rendre l'API « malade » (ni bloquer Docker).
+    mail:
+      enabled: false
 
 logging:
   level:

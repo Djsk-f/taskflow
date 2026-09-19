@@ -31,6 +31,10 @@ public class NotificationPreferences {
     @Column(name = "notify_daily_time", nullable = false)
     private boolean dailyTimeReminder = false;
 
+    /** Récapitulatif quotidien par e-mail : hors de l'application, donc sur demande explicite. */
+    @Column(name = "notify_email_digest", nullable = false)
+    private boolean emailDigest = false;
+
     /** Le type d'événement est-il voulu ? Seuls les rappels automatiques sont réglables. */
     public boolean allows(NotificationType type) {
         return switch (type) {

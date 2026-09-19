@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @Tag(name = "Notifications")
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final NotificationStream notificationStream;
 
     @Operation(summary = "Mes notifications", description = "Les plus récentes d'abord ; `size` de 1 à 50.")
     @GetMapping
@@ -32,6 +35,15 @@ public class NotificationController {
                                                    @RequestParam(defaultValue = "0") int page,
                                                    @RequestParam(defaultValue = "10") int size) {
         return notificationService.list(userId, page, size);
+    }
+
+    @Operation(summary = "Flux temps réel des notifications",
+            description = "Server-Sent Events : un événement `notifications` dès qu'un rappel est créé. "
+                    + "Le jeton passe par l'en-tête `Authorization` (client `fetch`), et l'interrogation "
+                    + "régulière reste la solution de repli si le flux se coupe.")
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@CurrentUser Long userId) {
+        return notificationStream.subscribe(userId);
     }
 
     @Operation(summary = "Nombre de notifications non lues", description = "Le badge de la cloche.")

@@ -41,6 +41,7 @@ public class NotificationGenerator {
 
     private final NotificationRepository notificationRepository;
     private final NotificationProperties properties;
+    private final NotificationStream stream;
 
     @Transactional
     public int generate(Instant now) {
@@ -108,6 +109,8 @@ public class NotificationGenerator {
         notificationRepository.saveAll(fresh);
         if (!fresh.isEmpty()) {
             log.info("{} notification(s) créée(s)", fresh.size());
+            // Les onglets ouverts l'apprennent tout de suite, sans attendre leur prochaine question.
+            fresh.stream().map(notification -> notification.getUser().getId()).distinct().forEach(stream::publish);
         }
         return fresh.size();
     }

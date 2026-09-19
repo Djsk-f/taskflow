@@ -40,8 +40,14 @@ class NotificationGeneratorTest {
     @TestConfiguration
     static class Settings {
         @Bean
+        NotificationStream notificationStream() {
+            return new NotificationStream(1000);
+        }
+
+        @Bean
         NotificationProperties notificationProperties() {
-            return new NotificationProperties(ZoneId.of("Europe/Paris"), 17);
+            return new NotificationProperties(ZoneId.of("Europe/Paris"), 17,
+                    new NotificationProperties.Email(false, "TaskFlow <no-reply@test.local>", 7));
         }
     }
 
