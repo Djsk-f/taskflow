@@ -11,6 +11,14 @@ type StreamHandlers = {
 const MAX_BACKOFF_MS = 30_000
 
 /**
+ * Silence maximal toléré. Le serveur envoie un battement toutes les 25 s : au-delà d'une
+ * minute sans rien, la connexion est morte sans l'avoir dit (mandataire qui garde la
+ * socket ouverte, machine réveillée après une mise en veille…). On la referme pour en
+ * rouvrir une, au lieu de rester à attendre indéfiniment.
+ */
+const SILENCE_TIMEOUT_MS = 60_000
+
+/**
  * Flux temps réel des notifications (Server-Sent Events), lu avec `fetch` pour garder le
  * jeton dans l'en-tête `Authorization` : `EventSource` ne sait pas en envoyer, et le
  * mettre dans l'URL le ferait apparaître dans les journaux du serveur.
@@ -25,24 +33,39 @@ export function openNotificationStream({ onEvent, onConnectionChange }: StreamHa
 
   const loop = async () => {
     while (!controller.signal.aborted) {
+      // Une tentative peut être interrompue par l'appelant ou par le chien de garde.
+      const attemptController = new AbortController()
+      const abortAttempt = () => attemptController.abort()
+      controller.signal.addEventListener('abort', abortAttempt, { once: true })
+      let watchdog: ReturnType<typeof setTimeout> | undefined
+      const keepAlive = () => {
+        clearTimeout(watchdog)
+        watchdog = setTimeout(abortAttempt, SILENCE_TIMEOUT_MS)
+      }
+
       try {
         const token = tokenStorage.read()
         if (!token) {
           return
         }
+        keepAlive()
         const response = await fetch(`${env.VITE_API_BASE_URL}/notifications/stream`, {
           headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
-          signal: controller.signal,
+          signal: attemptController.signal,
         })
         if (!response.ok || !response.body) {
           throw new Error(`flux indisponible (${response.status})`)
         }
         attempt = 0
         onConnectionChange(true)
-        await readEvents(response.body, onEvent, controller.signal)
+        await readEvents(response.body, onEvent, keepAlive, attemptController.signal)
       } catch {
         // coupure attendue : on retente plus bas
+      } finally {
+        clearTimeout(watchdog)
+        controller.signal.removeEventListener('abort', abortAttempt)
       }
+
       onConnectionChange(false)
       if (controller.signal.aborted) {
         return
@@ -56,7 +79,12 @@ export function openNotificationStream({ onEvent, onConnectionChange }: StreamHa
 }
 
 /** Découpe le flux en événements : une ligne `data:` = un signal (les `:` sont des battements). */
-async function readEvents(body: ReadableStream<Uint8Array>, onEvent: () => void, signal: AbortSignal) {
+async function readEvents(
+  body: ReadableStream<Uint8Array>,
+  onEvent: () => void,
+  keepAlive: () => void,
+  signal: AbortSignal,
+) {
   const reader = body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
@@ -65,6 +93,8 @@ async function readEvents(body: ReadableStream<Uint8Array>, onEvent: () => void,
     if (done) {
       return
     }
+    // Battement compris : toute donnée reçue prouve que la connexion est vivante.
+    keepAlive()
     buffer += decoder.decode(value, { stream: true })
     const lines = buffer.split('\n')
     buffer = lines.pop() ?? ''

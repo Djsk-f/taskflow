@@ -8,6 +8,14 @@ export const NOTIFICATIONS_QUERY_KEY = 'notifications'
  * toutes les 30 s, la cloche demande au même rythme.
  */
 const POLL_MS = 30_000
+
+/**
+ * Filet de sécurité gardé MÊME quand le flux est ouvert. Un flux peut cesser de délivrer
+ * sans se fermer (mandataire, onglet en veille) ; sans cette demande lente, la cloche
+ * resterait figée indéfiniment. Une requête par minute est un coût négligeable face à
+ * une notification jamais affichée.
+ */
+const STREAMING_POLL_MS = 60_000
 const PAGE_SIZE = 10
 
 /**
@@ -18,7 +26,7 @@ export function useUnreadCount(streaming: boolean) {
   return useQuery({
     queryKey: [NOTIFICATIONS_QUERY_KEY, 'unread-count'],
     queryFn: notificationApi.unreadCount,
-    refetchInterval: streaming ? false : POLL_MS,
+    refetchInterval: streaming ? STREAMING_POLL_MS : POLL_MS,
     refetchIntervalInBackground: true,
   })
 }
@@ -27,7 +35,7 @@ export function useLatestNotifications(streaming: boolean) {
   return useQuery({
     queryKey: [NOTIFICATIONS_QUERY_KEY, 'latest'],
     queryFn: () => notificationApi.list(0, PAGE_SIZE),
-    refetchInterval: streaming ? false : POLL_MS,
+    refetchInterval: streaming ? STREAMING_POLL_MS : POLL_MS,
     refetchIntervalInBackground: true,
   })
 }

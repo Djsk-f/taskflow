@@ -48,6 +48,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
+    /**
+     * OncePerRequestFilter ignore les reprises asynchrones par défaut. Or une réponse en
+     * flux (Server-Sent Events) est justement reprise ainsi : sans ce filtre, le contexte
+     * de sécurité serait vide à la reprise et la chaîne refuserait la requête (Access
+     * Denied), coupant le flux des notifications.
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
     private Optional<String> resolveToken(HttpServletRequest request) {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header == null || !header.startsWith(BEARER_PREFIX)) {
