@@ -1,8 +1,14 @@
 name: CI
 
-# Intégration continue du monorepo : le backend Spring Boot et l'interface React sont
-# deux projets indépendants, donc deux jobs qui tournent en parallèle. Aucun `needs` :
-# rien ne dépend de rien ici.
+# Intégration continue du monorepo, en trois temps :
+#
+#   api + web  (en parallèle : deux projets indépendants)
+#        ↓
+#   secrets    (Gitleaks : inutile de chercher des secrets si le code ne compile pas)
+#        ↓
+#   images     (construction des images Docker, puis scan Trivy de chacune)
+#
+# Une étape en échec arrête la suite : rien n'est construit ni scanné pour rien.
 on:
   push:
     branches: [main]
@@ -73,3 +79,65 @@ jobs:
         run: npm run build
         env:
           VITE_API_BASE_URL: /api/v1
+
+  secrets:
+    name: Secrets — Gitleaks
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    steps:
+      # Historique complet : un secret retiré depuis reste présent dans les anciens commits.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # v3 : version maintenue de l'action. La clé de licence n'est exigée que pour les
+      # dépôts appartenant à une organisation ; ce dépôt appartient à un compte personnel.
+      # Le scan échoue dès qu'un secret est détecté.
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Règles par défaut + la seule exception du dépôt, documentée dans ce fichier.
+          GITLEAKS_CONFIG: .gitleaks.toml
+          # Pas de commentaire automatique sur les PR : la CI reste en lecture seule.
+          GITLEAKS_ENABLE_COMMENTS: false
+
+  images:
+    name: Image ${{ matrix.image }} — construction et scan
+    runs-on: ubuntu-latest
+    needs: secrets
+    strategy:
+      # Un échec sur une image ne masque pas le résultat de l'autre.
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            context: task-manager-api-v1
+          - image: web
+            context: task-manager-web-v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Construite localement (`load`), jamais publiée : la publication viendra avec le CD.
+      - name: Construire l'image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          push: false
+          load: true
+          tags: taskflow-${{ matrix.image }}:${{ github.sha }}
+
+      # Politique : une vulnérabilité HIGH ou CRITICAL **pour laquelle un correctif existe**
+      # arrête le pipeline (exit-code 1). `ignore-unfixed` écarte celles qui n'ont pas encore
+      # de correctif publié : les signaler bloquerait la chaîne sans aucune action possible.
+      # Elles restent visibles en retirant cette option.
+      - name: Scan Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: taskflow-${{ matrix.image }}:${{ github.sha }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: table

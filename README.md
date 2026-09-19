@@ -491,6 +491,16 @@ de jetons de couleur.
 - **CORS** restreint aux origines configurées.
 - **Aucune fuite technique** : ni trace d'exécution ni message d'exception interne dans les réponses.
 - **Aucun secret dans le dépôt** : `.env` est ignoré par Git, seul `.env.example` est versionné.
+  La chaîne d'intégration le vérifie à chaque exécution avec **Gitleaks**, sur l'historique
+  complet. La seule exception, déclarée dans `.gitleaks.toml`, est le secret JWT du profil de
+  test (valeur publique, sans effet hors des tests) ; elle vise ce fichier **et** cette valeur
+  exacte, donc tout autre secret fait échouer le scan.
+- **Images Docker analysées par Trivy** à chaque exécution : une vulnérabilité `HIGH` ou
+  `CRITICAL` **disposant d'un correctif** arrête la chaîne. Les vulnérabilités sans correctif
+  publié sont écartées (`ignore-unfixed`) : les signaler bloquerait sans action possible.
+  C'est ce scan qui a imposé deux mises à jour : `nginx:1.31-alpine` (39 failles corrigeables
+  héritées d'Alpine 3.21) et Tomcat embarqué 11.0.26 (trois failles critiques de contournement
+  d'authentification, `tomcat.version` dans le `pom.xml`).
 
 ---
 
@@ -523,9 +533,20 @@ cd task-manager-api-v1
 | `GlobalExceptionHandlerTest` | 4 | Erreur inattendue → `500` neutre, code métier conservé, chaque code porte son statut HTTP, message dans la langue demandée (français si langue inconnue) |
 
 **Intégration continue** : sur chaque push vers `main` et chaque pull request vers `main`,
-GitHub Actions exécute deux workflows en parallèle — `ci.yml` (tests et package de l'API,
-puis lint, tests et build de l'interface, en deux jobs indépendants) et `e2e.yml` (démarrage
-de l'application complète avec Docker Compose, puis parcours Playwright).
+GitHub Actions exécute deux workflows en parallèle.
+
+`ci.yml`, en trois temps, chaque étape conditionnant la suivante :
+
+```
+API (tests + package)  +  Interface (lint, tests, build)   ← en parallèle
+                 ↓
+         Gitleaks (recherche de secrets)
+                 ↓
+   Images Docker api et web : construction, puis scan Trivy
+```
+
+`e2e.yml` démarre en parallèle l'application complète avec Docker Compose et y joue les
+parcours Playwright. Aucune image n'est publiée : la publication viendra avec le déploiement.
 
 **Interface** — 44 tests Vitest (logique et composants) et 6 tests de bout en bout Playwright :
 

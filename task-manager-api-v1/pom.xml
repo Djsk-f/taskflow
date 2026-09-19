@@ -19,6 +19,12 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Tomcat plus récent que celui du parent Spring Boot 4.1.1 (11.0.24) : cette
+             version corrige trois failles critiques (CVE-2026-65182, CVE-2026-65905 et
+             CVE-2026-68525 : contournement de contraintes de sécurité et d'authentification),
+             détectées par le scan Trivy des images. À retirer dès qu'une version de Spring
+             Boot embarquera 11.0.25 ou plus. -->
+        <tomcat.version>11.0.26</tomcat.version>
         <jjwt.version>0.12.6</jjwt.version>
         <!-- springdoc v3 = lignée Spring Boot 4 (les versions majeures suivent celles de Boot). -->
         <springdoc.version>3.1.1</springdoc.version>

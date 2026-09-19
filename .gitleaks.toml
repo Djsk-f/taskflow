@@ -1,0 +1,15 @@
+# Configuration Gitleaks — règles par défaut, plus une seule exception, justifiée.
+[extend]
+useDefault = true
+
+# Le profil de test embarque volontairement un secret JWT : les tests doivent pouvoir
+# démarrer sans variable d'environnement, et l'API refuse de démarrer sans secret.
+# Sa valeur décodée est « test-secret-uniquement-pour-les-tests-au-moins-32-octets » :
+# elle ne donne accès à rien, et n'existe que dans la base H2 en mémoire d'un test.
+# L'exception est volontairement étroite (ce fichier ET cette valeur exacte) : tout autre
+# secret, même dans ce fichier, fait échouer le scan.
+[[allowlists]]
+description = "Secret JWT du profil de test, valeur publique sans effet hors des tests"
+condition = "AND"
+paths = ['''task-manager-api-v1/src/test/resources/application-test\.yml''']
+regexes = ['''dGVzdC1zZWNyZXQtdW5pcXVlbWVudC1wb3VyLWxlcy10ZXN0cy1hdS1tb2lucy0zMi1vY3RldHM=''']
