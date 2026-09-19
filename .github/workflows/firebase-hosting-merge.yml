@@ -1,11 +1,4 @@
-# Généré par le CLI Firebase (https://github.com/firebase/firebase-tools), puis adapté au
-# monorepo : l'interface vit dans task-manager-web-v1/, il n'y a pas de package.json à la
-# racine, et la configuration Firebase est dans ce même sous-dossier.
-#
-# Le déploiement n'a lieu qu'après une CI verte : il attend la fin du workflow « CI »
-# (tests API et interface, Gitleaks, construction et scan Trivy des images) et ne part que
-# si sa conclusion est « success ». Pour revenir à un déploiement à chaque push, remplacer
-# le bloc `workflow_run` par `push: branches: [main]` et retirer le `if`.
+# Déploie l'interface sur Firebase après une CI verte sur main.
 name: Deploy to Firebase Hosting on merge
 
 on:
@@ -14,11 +7,9 @@ on:
     types: [completed]
     branches: [main]
 
-# Lecture seule : ce workflow publie sur Firebase, il n'écrit rien dans le dépôt.
 permissions:
   contents: read
 
-# Un seul déploiement en direct à la fois ; celui en cours n'est jamais interrompu.
 concurrency:
   group: firebase-hosting-live
   cancel-in-progress: false
@@ -31,13 +22,11 @@ jobs:
       run:
         working-directory: task-manager-web-v1
     steps:
-      # Le commit exact validé par la CI, et non la tête de branche : sans cela, un push
-      # survenu entre-temps serait déployé sans avoir été testé.
+      # Le commit validé par la CI.
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      # Même version que la CI : Vite 8 et TypeScript 6 exigent Node >= 20.19 ou >= 22.12.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -46,17 +35,30 @@ jobs:
 
       - run: npm ci
 
-      # URL de l'API appelée par l'interface. Sur Firebase, aucun proxy ne relaie /api :
-      # il faut l'URL publique de l'API, à renseigner dans la variable de dépôt
-      # VITE_API_BASE_URL (Settings > Secrets and variables > Actions > Variables).
-      # Tant qu'elle est absente, le site se charge et signale que le serveur est
-      # injoignable, au lieu de rester blanc.
+      # Échoue si la variable de dépôt VITE_API_BASE_URL est absente ou relative.
+      - name: Vérifier l'URL de l'API
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          SECRET_DU_MEME_NOM: ${{ secrets.VITE_API_BASE_URL != '' }}
+        run: |
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            if [ "$SECRET_DU_MEME_NOM" = "true" ]; then
+              echo "::error title=VITE_API_BASE_URL créée comme secret::La recréer dans l'onglet Variables (Settings > Secrets and variables > Actions)."
+            else
+              echo "::error title=VITE_API_BASE_URL manquante::La créer dans Settings > Secrets and variables > Actions > Variables."
+            fi
+            exit 1
+          fi
+          case "$VITE_API_BASE_URL" in
+            https://*) echo "URL de l'API : $VITE_API_BASE_URL" ;;
+            *) echo "::error title=VITE_API_BASE_URL invalide::URL absolue en https:// attendue, reçu : $VITE_API_BASE_URL"; exit 1 ;;
+          esac
+
       - run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || '/api/v1' }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
 
-      # `entryPoint` : firebase.json et .firebaserc sont dans le sous-dossier, pas à la
-      # racine du dépôt. Le dossier publié est donc task-manager-web-v1/dist.
+      # entryPoint : firebase.json est dans task-manager-web-v1/.
       - uses: FirebaseExtended/action-hosting-deploy@v0.11.0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

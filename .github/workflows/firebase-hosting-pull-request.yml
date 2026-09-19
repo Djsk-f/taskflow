@@ -1,26 +1,20 @@
-# Généré par le CLI Firebase (https://github.com/firebase/firebase-tools), puis adapté au
-# monorepo : build depuis task-manager-web-v1/, et configuration Firebase lue dans ce même
-# sous-dossier. Chaque pull request reçoit un canal de prévisualisation temporaire, dont
-# l'URL est commentée sur la PR ; le site en direct n'est jamais touché ici.
+# Prévisualisation Firebase de chaque pull request (URL commentée sur la PR).
 name: Deploy to Firebase Hosting on PR
 
 on: pull_request
 
-# `checks` et `pull-requests` en écriture : l'action publie l'URL de prévisualisation
-# sur la pull request. `contents` reste en lecture seule.
 permissions:
   checks: write
   contents: read
   pull-requests: write
 
-# Un nouveau commit sur la PR remplace la prévisualisation en cours.
 concurrency:
   group: firebase-hosting-preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   build_and_preview:
-    # Les PR venant d'un fork n'ont pas accès aux secrets : inutile de tenter le déploiement.
+    # Les PR de forks n'ont pas accès aux secrets.
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     defaults:
@@ -29,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Même version que la CI : Vite 8 et TypeScript 6 exigent Node >= 20.19 ou >= 22.12.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -38,13 +31,30 @@ jobs:
 
       - run: npm ci
 
-      # Même variable que le déploiement en direct (voir firebase-hosting-merge.yml).
+      # Échoue si la variable de dépôt VITE_API_BASE_URL est absente ou relative.
+      - name: Vérifier l'URL de l'API
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          SECRET_DU_MEME_NOM: ${{ secrets.VITE_API_BASE_URL != '' }}
+        run: |
+          if [ -z "$VITE_API_BASE_URL" ]; then
+            if [ "$SECRET_DU_MEME_NOM" = "true" ]; then
+              echo "::error title=VITE_API_BASE_URL créée comme secret::La recréer dans l'onglet Variables (Settings > Secrets and variables > Actions)."
+            else
+              echo "::error title=VITE_API_BASE_URL manquante::La créer dans Settings > Secrets and variables > Actions > Variables."
+            fi
+            exit 1
+          fi
+          case "$VITE_API_BASE_URL" in
+            https://*) echo "URL de l'API : $VITE_API_BASE_URL" ;;
+            *) echo "::error title=VITE_API_BASE_URL invalide::URL absolue en https:// attendue, reçu : $VITE_API_BASE_URL"; exit 1 ;;
+          esac
+
       - run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || '/api/v1' }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
 
-      # Sans `channelId`, l'action crée un canal de prévisualisation propre à cette PR.
-      # `entryPoint` : la configuration Firebase est dans le sous-dossier de l'interface.
+      # Sans channelId : canal de prévisualisation propre à la PR.
       - uses: FirebaseExtended/action-hosting-deploy@v0.11.0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
