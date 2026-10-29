@@ -2,6 +2,10 @@
 
 [![CI](https://github.com/Djsk-f/taskflow/actions/workflows/ci.yml/badge.svg)](https://github.com/Djsk-f/taskflow/actions/workflows/ci.yml)
 
+> **🇬🇧 Overview** — TaskFlow is a full-stack task manager built as a production-style project: a **Spring Boot 4 (Java 21) REST API** secured with JWT, a **React 19 + TypeScript** frontend, MySQL with Flyway migrations, all shipped with **Docker Compose**.
+>
+> **Quality:** 71 JUnit API tests, 44 Vitest tests and 6 Playwright end-to-end tests · CI on GitHub Actions with secret scanning (Gitleaks) and image scanning (Trivy). The detailed documentation below is in French.
+
 Application web de gestion de tâches personnelles : chaque utilisateur crée un compte,
 se connecte, puis gère **ses** tâches — tableau Kanban, recherche, filtres, pagination —
 et **le temps qu'il y passe** grâce aux feuilles de temps. Interface responsive,
