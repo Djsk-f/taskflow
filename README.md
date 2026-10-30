@@ -71,7 +71,7 @@ bouton « retour » du navigateur fonctionne. Une échéance dépassée est sign
 | Couche | Technologie | Version |
 |--------|-------------|---------|
 | Langage serveur | Java | 21 |
-| Framework | Spring Boot (Web MVC, Security, Data JPA, Validation, Actuator) | 4.1.1 |
+| Framework | Spring Boot (Web MVC, Security, Data JPA, Validation, Actuator) | 4.1.2 |
 | Jetons | JJWT | 0.12.6 |
 | Documentation d'API | springdoc-openapi (OpenAPI 3.1, Swagger UI) | 3.1.1 |
 | Base de données | MySQL (via Docker) | 8.4 |
@@ -503,9 +503,9 @@ de jetons de couleur.
 - **Images Docker analysées par Trivy** à chaque exécution : une vulnérabilité `HIGH` ou
   `CRITICAL` **disposant d'un correctif** arrête la chaîne. Les vulnérabilités sans correctif
   publié sont écartées (`ignore-unfixed`) : les signaler bloquerait sans action possible.
-  C'est ce scan qui a imposé deux mises à jour : `nginx:1.31-alpine` (39 failles corrigeables
-  héritées d'Alpine 3.21) et Tomcat embarqué 11.0.26 (trois failles critiques de contournement
-  d'authentification, `tomcat.version` dans le `pom.xml`).
+  C'est ce scan qui a imposé `nginx:1.31-alpine` (39 failles corrigeables héritées d'Alpine
+  3.21), Spring Boot 4.1.2 (Tomcat 11.0.27, Jackson 2.21.7 et 3.1.7) et `apk upgrade` dans les
+  deux images finales, pour les correctifs Alpine publiés après l'image de base.
 
 ---
 

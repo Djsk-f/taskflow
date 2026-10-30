@@ -13,6 +13,8 @@ RUN npm run build
 
 # ---- Exécution : fichiers statiques servis par nginx ----
 FROM nginx:1.31-alpine
+# Correctifs Alpine publiés après la construction de l'image de base (scan Trivy).
+RUN apk upgrade --no-cache
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html

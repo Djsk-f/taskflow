@@ -11,6 +11,8 @@ RUN mvn -B -q package -DskipTests && cp target/*.jar app.jar
 
 # ---- Exécution : JRE seul, utilisateur non root ----
 FROM eclipse-temurin:21-jre-alpine
+# Correctifs Alpine publiés après la construction de l'image de base (scan Trivy).
+RUN apk upgrade --no-cache
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /workspace/app.jar app.jar
